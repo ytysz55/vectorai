@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "name": "Potrace",
+  "license": "GPL-2.0-or-later",
+  "isolation": "external-process-only",
+  "redistribute_binary": false,
+  "version": "1.16",
+  "version_output": "potrace 1.16. Copyright (C) 2001-2019 Peter Selinger.",
+  "source": {
+    "archive_url": "https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz",
+    "archive_sha256": "be8248a17dedd6ccbaab2fcc45835bb0502d062e40fbded3bc56028ce5eb7acc"
+  },
+  "platforms": {
+    "linux-x86_64": {
+      "provision": "build-from-pinned-source-or-system-package",
+      "executable_sha256": null
+    },
+    "windows-x86_64": {
+      "provision": "official-archive",
+      "archive_url": "https://potrace.sourceforge.net/download/1.16/potrace-1.16.win64.zip",
+      "archive_sha256": "63699f9885b5ed053977fd94452a7bdbb77ee62b77bf28a3f17b2f14b9b9c65d",
+      "executable_sha256": "f1bcde040ae6576dc9c5868be7a72064957c5aea08e1dece240428319fc672a4"
+    }
+  },
+  "presets": {
+    "faithful": {
+      "arguments": [
+        "--svg", "--tight", "--turdsize", "0", "--alphamax", "1.0",
+        "--opttolerance", "0.2", "--unit", "10"
+      ]
+    },
+    "geometric": {
+      "arguments": [
+        "--svg", "--tight", "--turdsize", "2", "--alphamax", "0.7",
+        "--opttolerance", "0.4", "--unit", "10"
+      ]
+    },
+    "minimal": {
+      "arguments": [
+        "--svg", "--tight", "--turdsize", "5", "--alphamax", "1.333",
+        "--opttolerance", "0.8", "--unit", "5"
+      ]
+    }
+  }
+}

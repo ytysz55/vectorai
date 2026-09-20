@@ -1,0 +1,506 @@
+Görüntüden vektöre dönüüm için teknik yol
+haritasi
+
+Logo, ikon ve yazilarda güçlü bir ürün gelitirmek, 1-3 kiilik ekip için teknik olarak makul bir hedeftir. Önerilen
+yol; açik kaynak izleme tabani, sinirli görevler için eitilen küçük modeller ve geometriyi koruyan bir çikti
+motorudur. lk yatirim, hangi hatanin müteriye zaman kaybettirdiini ölçmeye ve o hatayi düzelten veri
+toplamaya ayrilmalidir.
+
+lk 90 gün için gerçekçi sonuç, ücretli pilotta kullanilabilen bir motor ve seçilmi görsel siniflarinda ölçülmü
+ilerlemedir. Genel pazar liderlii daha uzun bir gelitirme döngüsü gerektirir ve bugünden garanti edilemez.
+Buradaki süreler, veri miktarlari ve bütçeler planlama varsayimidir; deney sonucu olarak sunulmamaktadir.
+
+Balangiç kapsami düz renkli logolar, ikonlar ve Latin/Türkçe yazili görsellerdir. Ürünün ana vaadi kaynak
+tasarima sadakat, az sayida anlamli kontrol noktasi ve kisa düzeltme süresi olmalidir. Fotoraf stilizasyonu, tam
+tasarim editörü ve otomatik naki programlama ilk sürümün kapsamina alinmamalidir.
+
+1 Teknik yatirim karari
+
+Vectorizer.AI, kendi açiklamasinda özel veriyle eitilmi alari klasik algoritmalarla birletirdiini; bütün ekilleri,
+köeleri ve simetriyi ilediini belirtiyor. Bu, rakibin gücünün birden fazla bileene dayandiini gösterir. Açiklama;
+tam a mimarisini, parametre sayisini veya eitim maliyetini belirlemeye yetmez.1
+
+Yol                     Küçük ekip için karilii                                        Karar
+Klasik izleme tabani    Hizli balangiç; veri ve kalite ölçümü için çalian referans     lk iki haftada kur
+Küçük modeller ve       Zor bölgeleri hedefleyerek maliyeti ve hata nedenlerini        Ana gelitirme yolu
+geometri                kontrol etme                                                   Yan yana ölçülen aday
+                        Anlamli ekil önerileri; gecikme, tutarlilik ve lisans zinciri  lk alti ay için önerilmez
+Hazir büyük SVG modeli  incelenmeli
+
+Temel modeli sifirdan   Veri temizleme, daitik eitim ve uzun deney döngüsü
+eitme
+
+Küçük bir sinir/köe modelini sifirdan eitmek bu planla uyumludur. Milyarlarca parametreli genel bir
+görüntüden SVG modelini sifirdan yetitirmek farkli ölçekte bir itir. Ayrimi net tutmak, "kendi modelimiz olsun"
+isteini ie yarayan bir mühendislik yatirimina dönütürür.
+
+2 Rakipler ve ürün çitasi
+
+Vectorizer.AI ana karilatirma hedefi olabilir; rekabet alani daha genitir. Aaidaki tablo yayimlanmi ürün
+özelliklerini karilatirir. Baimsiz, ayni girdilerle yürütülmü bir kalite siralamasi deildir.
+
+1 Vectorizer.AI. Image to Vector Converter. tarihsiz.
+Araç               Dorulanmi özellik                                                   Ürüne etkisi
+Vectorizer.AI
+                   ekil uydurma, simetri, saydamlik;                                   Temiz konturlar ve üretim uyumu
+Adobe Illustrator  SVG/PDF/EPS/DXF; 3 MP giri siniri.1                                 balangiç çitasidir.
+CorelDRAW
+PowerTRACE         Gelimi Image Trace önayarlarinda gradyan, ekil,                     Mevcut editör i akiina kari zaman
+VTracer            saydamlik ve otomatik gruplama.2                                    kazandirmak gerekir.
+
+Vector Magic       zleme öncesi AI büyütme ve JPEG bozulmalarini                       Baski ve tabela kullanicilarinin mevcut
+                   azaltma.3                                                           çözümüdür.
+
+                   MIT kod; güncel 1.0 belgelerinde ortak sinirlar, palet              Hem balangiç bileeni hem sürekli
+                   ve eri sadeletirme.4                                                ölçülecek açik kaynak referans.
+
+                   Cedar Lake Ventures portföyünde bitmapten vektöre Vectorizer.AI ile ayni irket baini
+
+                   dönüüm ürünü.5                                                      pazar hesabinda dikkate al.
+
+Illustrator'in güncel seçenekleri dorusal gradyanlari ve bazi temel ekilleri taniyabiliyor. ekil tanimanin kapsami
+kusursuz, ayrik daire/kare gibi örneklerle sinirlanabiliyor. "Rakipler gradyan veya ekil taniyamiyor" üzerine
+kurulacak konumlandirma güncel deildir.6
+
+Vectorizer.AI'nin yayimlanan USD tarifelerinde web kullanimi ile API ayridir. API'de bir kredi bir tam dönüüme
+karilik gelir; tüketici planindaki sinirsiz kullanim API hakki salamaz. Bölge, vergi ve ödeme ekrani toplami ayrica
+deiebilir.7
+
+Plan               Aylik USD fiyati                     Birim karilii
+Web uygulamasi     9,99                                 nsan tarafindan kullanim; API yok
+API 1.000 kredi    139,99                               Yaklaik 0,140 USD/görsel
+API 10.000 kredi   949,99                               Yaklaik 0,095 USD/görsel
+API 100.000 kredi  4.999,99                             Yaklaik 0,050 USD/görsel
+
+Farklilama hipotezi: bozuk logolarda marka geometrisini ve harfleri koruyup kullanicinin düzeltme süresini
+azaltmak. Yerel bir bölgeyi yeniden ileme, köeyi sabitleme ve yaziyi ayri kontrol etme bu hipotezi destekler.
+Bunlar rakiplerde kesinlikle bulunmayan özellikler olarak deil, pilotta deeri ölçülecek ürün tercihleri olarak ele
+alinmalidir.
+
+2 Adobe. Vectorize images using Image Trace. 26 ubat 2026.
+3 Sara Macdonald / CorelDRAW. How AI enhances your workflow in CorelDRAW. tarihsiz.
+4 Vision Cortex. VTracer repository and README. güncel depo; 1.0 gelitirme belgeleri.
+5 Cedar Lake Ventures. About. tarihsiz.
+6 Adobe. Image Trace panel options in Illustrator. tarihsiz.
+7 Vectorizer.AI. Pricing for the Web App and API. tarihsiz; USD tarife görünümü.
+3 Kullanilabilecek modeller ve aratirmalar
+
+Hazir model seçimi için ilk kisa liste StarVector 1B/8B ile OmniSVG 1.1 4B/8B olmalidir. Her model ayni özgün
+görseller, ayni çikti kisitlari ve ayni zaman bütçesiyle ölçülmelidir. Farkli makalelerdeki DINO veya LPIPS sayilari,
+tek baina ticari ürünler arasinda liderlik siralamasi oluturmaz.8,9
+
+Çalima veya araç    Teknik katki                                 Önerilen kullanim
+
+StarVector          Görüntüden SVG kodu üretimi; ikon, logo ve   1B ekonomik referans; 8B kalite adayi. Harf ve
+CVPR 2025           diyagram odakli modeller.8                   küçük detaylari ayrica test et.
+
+OmniSVG 1.1         Çok kipli SVG üretimi; yayimlanmi 4B/8B      Aday model olarak ölç. Veri lisansini airlik
+2025 sürümleri      airliklari ve eitim kodu.9                   lisansindan ayir.
+
+DiffVG              Vektör parametreleri için türev alinabilen   Mevcut iyi konturlarda kisa, yerel geometrik
+SIGGRAPH Asia 2020  render.10                                    iyiletirme.
+
+LIVE                Kapali Bézier yollarini katman ekleyerek     Katmanlandirma referansi. Her dosyada uzun
+CVPR 2022           optimize etme.11                             optimizasyonu varsayilan yapma.
+
+RLRF                Üretilen SVG renderindan ödül üreterek       Denetimli eitim ie yaradiktan sonra sinirli
+2025                pekitirmeli örenme.12                        deney; ilk aamada zorunlu deil.
+
+VectorArk           Yuvarlatilmi çokgen temsili, bozulma modeli  Veri bozulmalari ve sade temsilden yararlan;
+Mayis 2026          ve aday seçimi.13                            ilk sürümü yayimlanmi bir üretim paketi
+                                                                 varsayimina balama.
+AnchorFlow          Seyrek kontrol noktasi alanlari ve renderla
+Mayis 2026          yönlendirilen düzeltme.14                    Nokta yerleimini örenme fikri için Ar-Ge
+                                                                 adayi; önileme hatalarini ayrica ölç.
+
+VectorArk, farkli rasterletiricilerin ayni SVG'den ürettii piksellerin bile bazi modellerde belirgin kalite farki
+dourabildiini gösteriyor. Çalima yaklaik 5 milyon SVG ve önceden eitilmi 1B model kullaniyor. Bu ölçekteki
+veri hacmini küçük ekibin ilk deneyi için zorunlu saymak doru deildir; asil ders, gerçek bozulmalari ve renderer
+farklarini veri tasarimina katmaktir.13
+
+AnchorFlow'un sonuçlari belirli veri alt kümeleri üzerindedir; bileen çikarma hatalari ve belirsiz detaylar
+sinirlamalar arasinda yer alir. RLRF de çok sayida aday üretmenin eitim verimliliini düürdüünü belirtir. Bu
+bulgular, bütün görselleri pahali bir üretim veya optimizasyon yoluna göndermek yerine ölçülmü bir
+yönlendirme politikasi kurulmasini destekler.14,12
+
+8 Juan A. Rodriguez ve dierleri. StarVector repository and SVG Bench. CVPR 2025.
+9 Yiying Yang ve dierleri. OmniSVG repository. NeurIPS 2025; sonraki sürüm notlari.
+10 Tzu-Mao Li, Michal Lukác, Michaël Gharbi ve Jonathan Ragan-Kelley. Differentiable Vector Graphics Rasterization for Editing and Learning.
+
+SIGGRAPH Asia 2020.
+
+11 Xu Ma ve dierleri / Picsart AI Research. Towards Layer Wise Image Vectorization. CVPR 2022.
+12 Juan A. Rodriguez ve dierleri. Rendering Aware Reinforcement Learning for Vector Graphics Generation. 30 Kasim 2025; arXiv v2.
+13 Tarun Gehlaut ve dierleri. VectorArk Learning Practical Image Vectorization with Rounded Polygon Representation. 23 Mayis 2026; arXiv v1.
+14 Mengnan Jiang ve dierleri. AnchorFlow Editable SVG Reconstruction via Sparse Anchor Point Fields. 19 Mayis 2026; arXiv v1.
+4 Önerilen sistem mimarisi
+
+Aaidaki mimari bir tasarim önerisidir. Ayni görselin farkli bölgeleri farkli yöntemlerden yararlanabilir. lk
+sürümde yönlendirme kurallarla yapilabilir; yeterli hata kaydi oluunca küçük bir kalite modeliyle gelitirilebilir.
+
+ekil 1 Bölge türüne göre ileme ve kabul denetimi
+
+Girdi ve bölge analizi
+Girdiyi boyut, renk profili, alfa kanali ve metin bölgeleri açisindan incele. effaf piksellerin görünmeyen RGB
+deerlerini renk kümelemesine sokma; alfa ile renk ilemlerini tutarli yürüt. Orijinal çözünürlükteki sinir kanitini
+koru. Büyütme veya gürültü azaltma çiktisini ikinci aday olarak deerlendir; kaynak görseli geri dönü noktasi
+olarak sakla.
+VTracer'in sürümü sabitlenmi bir tabanini kullanarak renk bölgeleri ve balangiç konturlari üret. Güncel 1.0
+belgelerindeki ortak sinir ve sadeletirme ilevleri deerlidir; örnek kurulumun alpha sürüm göstermesi
+nedeniyle kararli sürümle gelitirme sürümünü ayri ölç. Her algoritmanin sürümünü sonuç kaydina yaz.4
+Geometri ve ortak sinirlar
+ç temsilde bölge kimlikleri, komuluk, delikler ve ortak kenarlar birlikte tutulmalidir. ki komu eklin ayni
+kenarini tek bir eri olarak optimize etmek, baimsiz eri uydurmanin oluturabilecei uyumsuzluklari azaltir.
+Dia aktarilan SVG ayni siniri iki yolda taisa da koordinatlar ayni kaynaktan üretilmelidir. Örtüen nesneler için
+ayrica çizim sirasi gerekir; görünen sinirlar tek baina özgün katmanlari belirlemez.
+Doru, daire, elips ve yuvarlatilmi dikdörtgen önerilerini serbest Bézier erisiyle karilatir. Daha basit ekli
+yalnizca hata toleransi içinde kaldiinda seç. Sadeletirme köeyi yuvarlamamali; simetri, kaynakta yeterli kanit
+varsa uygulanmalidir. Önizlemedeki ince çizgilerin gerçek geometri boluu mu yoksa renderer kenar
+yumuatmasi mi olduu ayri kontrol edilmelidir.
+5 Yazi ileme ve çikti kalitesi
+
+Yazi, ayri bir deerlendirme yolu gerektirir. Bir harfin küçük deliinin kapanmasi veya "" noktasinin kaybolmasi
+düük piksel hatasiyla birlikte görülebilir. Varsayilan çikti harf konturlarini korumalidir. Düzenlenebilir metin,
+ancak karakter dizisi ve font elemesi yeterince güvenilir olduunda ikinci çikti seçenei olmalidir.
+
+PP-OCRv5'in Latin model ailesi Türkçeyi destekler ve balangiç OCR adayi olabilir. Bu dil destei, özel çizilmi
+logotipleri doru tanima garantisi deildir. OCR çiktisini gerçek kabul etmek yerine, karakter konturlariyla ve
+gerektiinde insan dorulamasiyla karilatir. Türkçe testlerde /i, I/i, /, /, Ç/ç, Ö/ö ve Ü/ü çiftlerini açikça
+kapsa.15
+
+Font geri kazaniminda önce lisansli font kataloundan aday bul; sonra font boyutu, harf aralii, baz çizgisi ve
+varsa dönüümü eletir. Adayi yeniden render ederek kontura kari ölç. Özel harf deiiklikleri, ligatürler ve
+erisel yazilar için fontu zorla yerletirmek tasarimi deitirir. Bu durumda kontur çiktisi korunmali, kullaniciya
+yalnizca güvenilir bir alternatif sunulmalidir.
+
+Kalite denetimi
+
+Üretim çiktisini en az iki renderer ile 1×, 4× ve 16× boyutta incele. resvg, statik SVG renderi için uygun bir
+adaydir; ikinci motorun farkli bir uygulama ailesinden gelmesi renderer baimli hatalari yakalamayi kolaylatirir.
+Metinli SVG'lerde ayni font dosyalari ve sürümleriyle kontrol yapilmalidir.16
+
+Denetim; geçerli yollari, delikleri, küçük kopuk parçalari, komu sinirlari ve renk/alfayi kapsamalidir. SVG'de fill-
+rule, stroke-linecap ve stroke-linejoin görünümü etkiler; yalnizca kontrol noktalarini karilatirmak yeterli
+deildir. Eri doruluu, farkli parametrizasyonlari cezalandirmamak için kontur üzerinde örneklenen noktalarla
+ölçülmelidir.17
+
+lk dia aktarim hedefi SVG ve vektör PDF olsun. Düzenlenebilir SVG ile daha geni uyum için yazilari kontura
+çevrilmi SVG seçeneklerini açikça adlandir. EPS ve DXF'yi müteri ihtiyaciyla ekle; formatlar ayni özellikleri
+taimaz. Vectorizer.AI de Adobe uyumlu SVG'de eri türlerini sinirlayan ayri bir seçenek sunuyor.18
+
+Çiktida gizli raster gömme kabul edilmemelidir. Kesim iinde açik yol, yinelenen kontur ve yanli fiziksel ölçü
+ayrica hata sayilmalidir. Baskida renk profili ve spot renk i akii, nakita diki plani ayri problemlerdir; genel SVG
+dia aktarimi bu kullanim biçimlerinin tamamina hazir üretim dosyasi anlamina gelmez.
+
+6 Eitim verisinin kurulmasi
+
+Balangiç veri yatirimi 10.000-30.000 farkli temel SVG ve bunlardan türetilmi 100.000-300.000 bozulmu raster
+elemesi olabilir. lk modelin hata erileri veri çeitlilii ihtiyacini dorularsa 50.000-100.000 temel tasarima ve
+0,5-1 milyon elemeye çikilir. Bunlar önerilen deney ölçekleridir; model baarisi için kanitlanmi minimumlar
+deildir.
+
+15 PaddleOCR. PP OCRv5 Multilingual Text Recognition. güncel belge.
+16 Linebender. resvg repository. güncel depo.
+17 W3C. SVG 2 Painting Filling Stroking and Marker Symbols. teknik belirtim.
+18 Vectorizer.AI. Output Options. tarihsiz.
+Kaynak                       Kullanim                            Hak ve kalite koulu
+
+Kendi prosedürel SVG         Temel ekiller, delikler,            Gerçek vektör hedefi ve topoloji etiketleri üret;
+üreticisi                    çakimalar, dar boluklar             çeitlilii yalniz renkle artirma.
+
+Material Design ikonlari Geometrik ve dolgu ikonlari             Depodaki Apache 2.0 artlarini ve bildirimleri koru.19
+
+Lucide ikonlari              Açik çizgiler, uçlar ve birleimler  Güncel ISC lisansi; Feather kökenli bazi ikonlarda ayrica
+                                                                 MIT bildirimi var.20
+
+Noto Sans gibi açik fontlar  Kelime, logo benzeri dizgi, Türkçe Seçilen fontun OFL dosyasini kaydet; font daitimi ile
+
+                             harfler                             render çiktisini ayir.  21
+
+zinli müteri görselleri      Gerçek JPEG, ekran görüntüsü,       Ürün ilemesi ve eitim iznini ayri kaydet; zor örneklere
+                             tarama                              uzman hedefi ekle.
+
+Toplu SVG veri setleri       Aratirma karilatirmasi ve aday      Dosya kaynai/lisansi dorulanmadan tüm koleksiyonu
+                             taramasi                            ticari eitime alma.
+
+Her kayit; orijinal SVG kimlii, kaynak URL'si, lisans, izin kapsami, hash, üretici/font ailesi, renderer sürümü ve
+bozulma parametreleri taimalidir. Ayni logonun renk veya sikitirma varyantlarini eitim ve test arasinda
+bölmek sizinti yaratir. Bölme ilemini varyant üretmeden önce tasarim ailesi ve font ailesi düzeyinde yap.
+
+Bozulma programi
+
+Ayni SVG'yi farkli rendererlarla üret; kisa kenari 32-1.024 piksel araliinda örnekle. JPEG sikitirmasi, yeniden
+boyutlandirma, hafif bulaniklik, ekran görüntüsü artifaktlari, alfa kenari ve çok hafif perspektifi ayri etiketlerle
+ekle. Bir ilk dailim olarak örneklerin %25'ini temiz birak; bozulma iddetini gerçek müteri örneklerinin
+dailimina göre ayarla. Rastgele bozulmalarin hepsini ayni anda uygulamak kullanisiz bir veri alani oluturabilir.
+
+Temel hedef yalniz raster çiftleri deildir. Temiz SVG'den bölge maskesi, iaretli uzaklik alani, köe koordinati,
+komuluk ve çizgi genilii etiketleri çikar. Antialias kenarlarindan iç renk kestirimini ayir. Çok düük çözünürlükte
+birden fazla doru vektör açiklamasi mümkün olduunda belirsizlii etikette koru; tek bir tahmini kesin gerçek
+gibi öretme.
+
+Lisans ayrimi
+
+OmniSVG deposu kodu Apache 2.0, MMSVG verisini CC BY-NC-SA 4.0 olarak tanimliyor; 1.1 4B model kartinda
+Apache 2.0 etiketi bulunuyor. Veri, kod, airlik ve temel model ayri ayri incelenmelidir. Ticari olmayan veri
+lisansi, mevcut airliklar hakkinda otomatik bir hüküm oluturmaz; fakat bu veriyle ticari ürün eitimi için açik
+izin varsayilamaz.9,22,23
+
+StarVector 8B airliklari Apache 2.0 etiketlidir; SVG-Stack karti her dosyanin ticari kullanim hakkini açiklamaz.
+
+19 Google. Material Design Icons LICENSE. Apache 2.0.
+20 Lucide Icons ve katkida bulunanlar. Lucide LICENSE. 2026; ISC ve bazi ikonlarda MIT.
+21 Google Fonts / Noto. Noto Sans OFL. SIL Open Font License 1.1.
+22 OmniSVG. OmniSVG1.1 4B model card. 2025.
+23 OmniSVG. MMSVG Icon dataset card. v2, Aralik 2025.
+Potrace GPL 2 veya sonrasi, VTracer MIT ve diffvg Apache 2.0 lisanslidir. Kullanilan sürümleri lisans dosyalariyla
+sabitle.24,25,26,27
+
+7 Hangi model nasil eitilmeli
+
+lk model sinir ve köe düzeltme
+Önerilen ilk örenilen bileen, yaklaik 10-30 milyon parametreli U-Net benzeri bir görüntü modeli olabilir. Girdi,
+RGB/alfa bölge kesiti ve klasik izleyicinin önerdii maskedir. Çikti, düzeltilmi uzaklik alani, köe olasilii ve güven
+skorudur. Böylece eitim görevi, uzun SVG dizisi üretimine göre daha dar ve hatasi incelenebilir hale gelir.
+lk deneylerde 512 piksel bölge kesitleri, karma hassasiyet, AdamW ve etkin 16-32 örneklik batch denenebilir.
+Örenme orani için 1e-4 çevresinde küçük tarama ve 30.000-100.000 adim üst siniri balangiç reçetesidir.
+Donanim uygunluu ölçülmeden garanti edilmez: ilk 1.000 adimda bellek, örnek/saniye ve kayip erisi
+kaydedilmeli; 24-48 GB GPU plani bu ölçüme göre düzeltilmelidir.
+Kayip fonksiyonu uzaklik alaninda Smooth L1, köelerde sinif dengesizliine duyarli bir kayip ve sinir çevresinde
+airlikli yeniden üretim hatasi içerebilir. Topoloji, yol sayisi ve SVG geçerlilii dorudan bu kayba eklenmi gibi
+varsayilmamalidir. Ayrik kararlar ayri etiketler veya aday kabul kurallariyla yönetilir. DiffVG ile sürekli kontrol
+noktasi iyiletirmesi, topoloji belirlendikten sonra uygulanabilir.10
+kinci model aday ve hata seçimi
+Önce kural tabanli bir kalite skoru kur: eksik harf, kapanan delik, airi nokta sayisi ve yüksek yerel kontur hatasi.
+Yeterli insan tercihi birikince küçük bir siniflandirici veya siralayici eit. Negatif örneklerin ayni girdinin farkli
+ileme adaylarindan gelmesi önemlidir; model yalniz kolay/temiz dosyalari seçerek baarili görünmemelidir.
+Büyük model ince ayari
+Hazir modelde belirli bir hata ailesi baskinsa, lisansi uygun 10.000-50.000 özgün SVG elemesiyle LoRA veya
+kismi ince ayar deneyi yapilabilir. Font, ekil sirasi ve koordinatlar için tutarli SVG normalizasyonu gerekir; görsel
+olarak edeer ama farkli kodlanan hedefler örenmeyi zorlatirabilir. Veri ölçei ve LoRA seçimi öneridir; özel
+tokenizer ve model uygulamasinda desteklenen katmanlar ayrica dorulanmalidir.
+Render tabanli pekitirmeli örenme daha sonraki seçenektir. Ödül; kontur hatasi, karakter doruluu, geçerli
+geometri ve karmaiklii birlikte dikkate almalidir. Tek bir algisal skoru veya kisa SVG ödülünü büyütmek, küçük
+harfleri silen ama "iyi puan alan" sonuçlar yaratabilir. lk aamada aday üretip yeniden render ederek seçmek
+daha kolay denetlenir.
+
+24 StarVector. starvector 8b im2svg model card. tarihsiz.
+25 StarVector. SVG Stack dataset card. tarihsiz.
+26 Peter Selinger. Potrace. sürüm 1.16.
+27 Tzu-Mao Li ve katkida bulunanlar. diffvg repository. tarihsiz.
+Deney  Deien bileen                                  Devam etme ölçütü
+E0     Sürümü sabit klasik taban
+E1     Yalniz ortak sinir ve ekil uydurma            Kalite, gecikme, hata siniflari kaydedildi
+E2     E1 üzerine küçük düzeltme modeli
+E3     Yaziya özel kontur ve OCR yolu                Edeer sadakatle daha az nokta veya düzeltme
+E4     En iyi hibrit adaya kari hazir SVG modelleri
+                                                     Bozuk girdi siniflarinda açik kazanim; temizlerde
+                                                     gerileme yok
+
+                                                     Karakter hatasi düüyor; özel logotip bozulmuyor
+
+                                                     Ayni zaman bütçesinde ek kalite maliyetini hak
+                                                     ediyor
+
+8 Kaliteyi kanitlayacak deerlendirme
+
+Rakiple ölçüm koulu: Vectorizer.AI'nin 23 Ekim 2025 tarihli artlari çiktilarin ML eitimi, deerlendirme,
+benchmark ve rakip sistem gelitirme/dorulamasinda kullanimini yazili izne baliyor. API satin almak bu
+kapsami otomatik açmaz. Bu nedenle dorudan karilatirma ve rakip çiktilarini eitimde kullanma için yetki
+alinmadan deney planina veri eklenmemelidir. zin yoksa kendi referanslari ve lisansi uygun açik kaynak tabanlari
+ölçülür; Vectorizer.AI'yi geçtii iddia edilmez.28
+
+lk 100 tanilama örnei gelitirme için kullanilabilir. Yayin karari için ayrica 300 görsellik kapali test seti ve ayar
+seçimi için 100 görsellik dorulama seti önerilir. Testte 150 özgün/lisansli kaynak SVG ve 150 izinli gerçek müteri
+girdisi bulunabilir. Gerçek girdilerin 50'sine uzman vektör referansi hazirlanir; kalanlari kör insan deerlendirmesi
+ve düzeltme süresiyle ölçülür.
+
+Birincil test sinifi                           Adet Özellikle aranan hata
+Temiz düz renkli logo/ikon
+Küçük ve sikitirilmi girdi                     50    Fazla kontrol noktasi; gereksiz parçalar
+Latin ve Türkçe yazi
+nce çizgi ve birleimler                        50    Kayip detay; JPEG bloklarinin izlenmesi
+Geometri ve simetri
+Saydamlik ve basit gradyan                     50    Yanli karakter; kapanan iç boluk; nokta kaybi
+
+                                               50    Kopma; iki çizginin birlemesi; yanli uç
+
+                                               50    Eri düz çizgi; eliptik daire; bozuk köe
+
+                                               50    Kenar halesi; yanli dolgu; airi renk bölgesi
+
+Her görsele tek bir ana sinif ve birden fazla yardimci etiket ver. Sentetik görsellerde temiz SVG'ye kari, gerçek
+görsellerde mevcut referans veya insan yargisina kari deerlendirme yap. Bozuk girdiye düük piksel hatasi,
+özgün tasarima doru onarim anlamina gelmez. Bilinmeyen özgün tasarimlarda bu iki hedefin ayrildii örnekleri
+ayrica raporla.
+
+28 Vectorizer.AI. Terms of Use. 23 Ekim 2025.
+Ölçüt              Nasil ölçülür                                      Önerilen yayin eii
+Sadakat ve metin
+Düzenlenebilirlik  Kör A/B tercih; kontur uzaklii; karakter           zinli karilatirmada %60 tercih; kritik metin
+Geometrik doruluk  doruluu                                            hatasi < %1 hedefi
+Dosya ve uyum
+Hiz ve kapsam      Kontrol noktasi/yol sayisi ve gerçek düzenleme     Edeer sadakatli örneklerde medyan
+                   görevi                                             düzeltme süresi %30 azalir
+
+                   Delik, bileen, birleim, ince çizgi ve dolgu        Kritik topoloji hatasi azalir; alt siniflar ayri
+                   denetimi                                           raporlanir
+
+                   SVG ayritirma; raster gömme; farkli renderer       Testte %100 geçerli dosya; gömülü raster yok
+                   ve editör
+
+                   1 MP girdi; sabit donanim; kuyruk ve hata orani Hizli yolda p95 5 sn; zor yolda 20 sn hedefi
+                   dahil
+
+Tablodaki eikler baari iddiasi deildir. Tercih ölçümünde taraflari rastgele yerletir, beraberlikleri ve baarisiz
+dönüümleri say; önceden belirlenmi bir puanlama kullan. En az üç deerlendiriciden alinan oylari görsel baina
+birletir ve güven araliini görsel/tasarim ailesi düzeyinde bootstrap ile hesapla. Küçük yazi alt grubunda sifir
+hata görmek, gerçek hata oraninin %1'in altinda olduunu kanitlamaz; bu iddia için alt grubu büyütmek gerekir.
+
+9 Bütçe ve birim maliyet
+
+Aaidaki hesaplar USD cinsinden planlama senaryolaridir. Kurucu emei, çalian ücretleri, vergi ve pazarlama
+ayrica gösterilmelidir. GPU fiyatlari eriilebilir tarife örnekleridir; rezervasyon, bölge, kapasite ve depolama
+toplami deitirebilir. Donanim seçimi için ilk i, modelin gerçek throughput ölçümüdür.
+
+Donanim ve kullanim                             Yayimlanan tarife     Planlamadaki yeri
+Runpod RTX 4090 Pod, 24 GB                      0,74 USD/GPU-saat     Küçük model ve pilot deneyleri.29
+Lambda A6000, 48 GB, tek GPU                    1,09 USD/GPU-saat     Daha geni bellek isteyen deney.30
+Lambda A100 PCIe, 40 GB, tek GPU                1,99 USD/GPU-saat     Alternatif eitim donanimi.30
+
+Runpod 4090 Serverless                          1,10 USD/saat edeeri  Sunucu içisinin açili/çalima/bota
+                                                                      süresiyle faturalama.29,31
+
+Örnein 300-1.200 RTX 4090 GPU-saati yaklaik 222-888 USD hesaplama bedelidir. Bu saat aralii, deneylere
+ayrilan bütçe zarfidir; belirli bir veri kümesini baariyla eitmek için ölçülmü süre deildir. Kisa bir throughput
+deneyi, hedef adim sayisi ve deneme sayisindan gerçek saat ihtiyaci hesaplanmalidir.
+
+29 Runpod. GPU Cloud Pricing. 13 Eylül 2026.
+30 Lambda. AI cloud pricing. güncel tarife.
+31 Runpod. Serverless Pricing. 20 Temmuz 2026.
+lk 90 gün için kalem                                              Alt senaryo  Üst senaryo
+GPU deneyleri                                                     250          1.000
+Veri temizleme ve uzman referanslari                              800          3.000
+Depolama, CPU, servis ve izleme                                   300          900
+Pilot kullanici deerlendirmeleri                                  400          1.600
+Ara toplam                                                        1.750        6.500
+%20 beklenmeyen gider payi                                        350          1.300
+Ücretler hariç toplam USD                                         2.100        7.800
+
+Bu yaklaik 2-8 bin USD, çaliani olmayan ve önemli gelitirme emeini kurucularin verdii dar kapsamli pilot
+içindir. Ücretli ekip için toplam bütçe, bu tutara aylik kii bai yüklü maliyet × kii sayisi × ay eklenerek bulunur.
+Örnek varsayim: 2 kii × 4.000 USD × 3 ay = 24.000 USD; böylece 90 günlük toplam 26.100-31.800 USD olur.
+4.000 USD bir maa aratirmasi sonucu deil, hesabi görünür kilan seçilmi girdidir.
+
+Alti ay için daha geni ama hâlâ küçük ekip senaryosunda, ücretler hariç 6-20 bin USD ayirmak makul bir bütçe
+hipotezidir. Ayni 2 kiilik ücret varsayimiyla 48 bin USD emek ve toplam 54-68 bin USD eder. Büyük modelin tam
+eitimi, pahali ticari veri lisanslari veya kapsamli editör gelitirmesi bu aralii aabilir.
+
+Görsel baina maliyet
+
+Ayrilmi GPU için hesap: saatlik fiyat × görsel baina etkin GPU saniyesi ÷ 3.600 ÷ kullanim orani. Tek görselde 2
+saniye ve %50 kullanim varsayilirsa 0,74 USD/saat donanimda GPU payi yaklaik 0,00082 USD olur. 10 saniye ve
+%25 kullanimda yaklaik 0,00822 USD'dir. CPU, depolama, tekrar denemeler, ödeme giderleri ve destek bunlara
+dahil deildir.
+
+Serverless hesabinda yalniz ileri geçi süresini kullanma: içi açilii, model yükleme ve bota bekleme de
+ücretlenir. Ayni GPU maliyetine hem kullanim orani çarpani hem ayni bota sürenin tekrar eklenmesi çift
+sayimdir. Pilot sirasinda toplam fatura / baarili sonuç sayisi ve yeniden ileme orani birlikte izlenmelidir.31
+
+10 Doksan günlük gelitirme plani
+
+Dönem      Somut teslim                                           Bir sonraki yatirim karari
+Gün 1-14
+Gün 15-30  100 tanilama görseli; VTracer/Potrace ve hazir         En sik ve en pahali iki hata ailesini seç. Rakip
+           modeller için ölçüm adaptörleri; sürüm kaydi           çiktisi kullanimi için hak kapsamini netletir.
+
+           Bölge grafi, temel ekil uydurma, iki rendererla çikti  Eitime geçmeden geometri deiikliklerinin
+           kontrolü; ilk izinli veri havuzu                       tek baina etkisini ölç.
+
+Gün 31-50  10-30 bin temel SVG; ilk küçük düzeltme modeli ve      Zor girdide kazanim yoksa veri
+           bileen çikarma deneyleri                               etiketini/temsili düzelt; modeli otomatik
+                                                                  büyütme.
+Gün 51-70  Yazi yolu; Türkçe hata örnekleri; aday seçimi; yerel
+           yeniden ileme                                          Metin güven eiini ve hangi bölgelere
+                                                                  model uygulanacaini seç.
+Dönem      Somut teslim                                        Bir sonraki yatirim karari
+Gün 71-90
+           300 kapali test; 10-20 tasarimci/baskiciyla pilot;  Kalite ve düzeltme süresi kazanimi varsa
+           SVG/PDF; ölçülmü maliyet                            ücretli dar kapsamli beta.
+
+Bu takvim, görüntü ileme veya geometri konusunda deneyimli en az bir gelitirici varsayar. ki kiilik ekipte bir
+kii motor/ML, dieri ürün/servis/veri i akiini üstlenebilir; uzman vektör tasarimcisi yari zamanli
+deerlendirmeye katilir. Tek gelitiricide ayni kapsami 90 güne sidirmak güvenilir deildir: önce tek renkli
+logolar ve SVG çiktisiyla balanmali, yazi geri kazanimi sonraya birakilmalidir.
+
+Dördüncü-altinci aylar; pilotta en çok düzeltme isteyen sinifa veri ekleme, kalite skoru kalibrasyonu ve
+gerekiyorsa hazir model ince ayari için ayrilmalidir. 6-12 ay, dar alanda daha güçlü bir ürün oluturmak için
+planlama ufkudur. Süre dolmasi, kalite üstünlüünün kaniti yerine geçmez.
+
+lk ürün ve gelir testi
+
+lk kullanicilar, tekrar tekrar düük kaliteli logo alan tasarimcilar, tabela/baski atölyeleri ve küçük ajanslar olabilir.
+Bu segment seçimi bir ticari hipotezdir. Pilot görümesinde son on dönüüm iini, kullanilan araci, harcanan
+düzeltme süresini ve hangi hatada ii elle yeniden çizdiklerini sor. Müteriye salayacai deer, kabul edilmi
+dosya baina tasarruf edilen dakika üzerinden hesaplanmalidir.
+
+lk arayüzde karilatirmali önizleme, renk sayisi, ayrinti ayari, köe/çizgi koruma ve bir bölgeyi yeniden ileme
+yeterlidir. Kayitli geri bildirim, hata bölgesini ve düzeltme nedenini içermeli; eitim izni açikça ayri tutulmalidir.
+Kullaniciya iç model isimleriyle seçim yaptirmak yerine, sonuca etkisi anlailir seçenekler sunulmalidir.
+
+Vectorizer.AI'nin düük fiyatli sinirsiz web plani fiyat rekabetini zorlatirir. Fiyati indirmeden önce, daha az elle
+düzeltme isteyen profesyonel i akiinin ödeme isteini test et. Abonelik ile kullanima dayali plani az sayida
+gerçek ödeme denemesiyle karilatir; dönüüm maliyeti ve youn kullanici davranii ölçülmeden sinirsiz
+kullanim sözü verme.7
+
+Devam etme ve kapsami daraltma ölçütleri
+
+90 gün sonunda yalniz sentetik örneklerde ilerleme varsa bozulma programi ve gerçek veri temsili gözden
+geçirilmelidir. Kalite artii görünse bile düzeltme süresi azalmiyorsa editör uyumu ve kontrol noktalari öncelik
+kazanir. Kritik yazi hatalari sürüyorsa genel logo/yazi iddiasi daraltilir. Ödeme yapan pilotlar ve tekrarlanan iler
+olutuunda, sonraki bütçe en çok zaman kazandiran hata sinifina ayrilir.
+
+lk somut yatirim: çalian bir ölçüm düzenei, izinli 100 zor örnek ve güçlü klasik taban. lk modelin görevini bu
+örneklerdeki hata dailimi belirlemelidir. Kalici teknik avantaj, özgün ve izinli zor örnekler, uzman düzeltmeleri ve
+bu düzeltmeleri daha az müdahaleyle tekrarlayan motor gelitikçe oluur.
+Kaynaklar
+
+Çevrimiçi belgeler ve tarifeler için kontrol tarihi 15 Eylül 2026'dir. Ürün özellikleri salayici beyanlaridir.
+Aratirma sonuçlari kendi deney koullariyla sinirlidir. Maliyet senaryolari ve yayin eikleri raporun önerileridir.
+Modeller bu rapor kapsaminda çalitirilmami, ürünler arasinda baimsiz dönüüm testi yapilmamitir.
+
+1. Vectorizer.AI. Image to Vector Converter. tarihsiz.
+2. Adobe. Vectorize images using Image Trace. 26 ubat 2026.
+3. Sara Macdonald / CorelDRAW. How AI enhances your workflow in CorelDRAW. tarihsiz.
+4. Vision Cortex. VTracer repository and README. güncel depo; 1.0 gelitirme belgeleri.
+5. Cedar Lake Ventures. About. tarihsiz.
+6. Adobe. Image Trace panel options in Illustrator. tarihsiz.
+7. Vectorizer.AI. Pricing for the Web App and API. tarihsiz; USD tarife görünümü.
+8. Juan A. Rodriguez ve dierleri. StarVector repository and SVG Bench. CVPR 2025.
+9. Yiying Yang ve dierleri. OmniSVG repository. NeurIPS 2025; sonraki sürüm notlari.
+10. Tzu-Mao Li, Michal Lukác, Michaël Gharbi ve Jonathan Ragan-Kelley. Differentiable Vector Graphics Rasterization for Editing
+and Learning. SIGGRAPH Asia 2020.
+11. Xu Ma ve dierleri / Picsart AI Research. Towards Layer Wise Image Vectorization. CVPR 2022.
+12. Juan A. Rodriguez ve dierleri. Rendering Aware Reinforcement Learning for Vector Graphics Generation. 30 Kasim 2025; arXiv
+v2.
+13. Tarun Gehlaut ve dierleri. VectorArk Learning Practical Image Vectorization with Rounded Polygon Representation. 23 Mayis
+2026; arXiv v1.
+14. Mengnan Jiang ve dierleri. AnchorFlow Editable SVG Reconstruction via Sparse Anchor Point Fields. 19 Mayis 2026; arXiv v1.
+15. PaddleOCR. PP OCRv5 Multilingual Text Recognition. güncel belge.
+16. Linebender. resvg repository. güncel depo.
+17. W3C. SVG 2 Painting Filling Stroking and Marker Symbols. teknik belirtim.
+18. Vectorizer.AI. Output Options. tarihsiz.
+19. Google. Material Design Icons LICENSE. Apache 2.0.
+20. Lucide Icons ve katkida bulunanlar. Lucide LICENSE. 2026; ISC ve bazi ikonlarda MIT.
+21. Google Fonts / Noto. Noto Sans OFL. SIL Open Font License 1.1.
+22. OmniSVG. OmniSVG1.1 4B model card. 2025.
+23. OmniSVG. MMSVG Icon dataset card. v2, Aralik 2025.
+24. StarVector. starvector 8b im2svg model card. tarihsiz.
+25. StarVector. SVG Stack dataset card. tarihsiz.
+26. Peter Selinger. Potrace. sürüm 1.16.
+27. Tzu-Mao Li ve katkida bulunanlar. diffvg repository. tarihsiz.
+28. Vectorizer.AI. Terms of Use. 23 Ekim 2025.
+29. Runpod. GPU Cloud Pricing. 13 Eylül 2026.
+30. Lambda. AI cloud pricing. güncel tarife.
+31. Runpod. Serverless Pricing. 20 Temmuz 2026.
+

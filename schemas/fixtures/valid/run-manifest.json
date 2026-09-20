@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "job-001",
+  "input": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "bytes": 1024,
+    "media_type": "image/png"
+  },
+  "engine": {
+    "version": "0.1.0",
+    "build_id": "local-debug",
+    "git_commit": "0000000000000000000000000000000000000000",
+    "dirty": true
+  },
+  "configuration": {
+    "config_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "profile_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "profile_version": "0.1.0",
+    "mode": "geometric",
+    "seed": 0,
+    "thread_count": 1,
+    "determinism_policy": "strict"
+  },
+  "platform": {
+    "os": "windows",
+    "arch": "x86_64",
+    "cpu": "test-cpu",
+    "gpu": null,
+    "compiler": "msvc-test"
+  },
+  "dependencies": {
+    "resvg": "0.45.0"
+  },
+  "stages": [
+    {
+      "name": "decode",
+      "status": "success",
+      "duration_ms": 1.25
+    }
+  ],
+  "resources": {
+    "total_duration_ms": 3.5,
+    "peak_rss_mb": 12.0
+  },
+  "summary": {
+    "regions": 2,
+    "edges": 4,
+    "candidates": 8,
+    "optimizer_iterations": 0
+  },
+  "warnings": [],
+  "fallbacks": [],
+  "final_status": "success",
+  "artifacts": [
+    {
+      "name": "result.svg",
+      "media_type": "image/svg+xml",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "bytes": 256
+    }
+  ]
+}

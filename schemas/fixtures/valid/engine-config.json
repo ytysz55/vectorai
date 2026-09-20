@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "profile_version": "0.1.0",
+  "mode": "geometric",
+  "seed": 0,
+  "resource_limits": {
+    "max_input_pixels": 16000000,
+    "max_regions": 10000,
+    "max_edges": 100000,
+    "max_candidates": 1000000,
+    "max_wall_time_ms": 120000,
+    "max_memory_mb": 4096
+  },
+  "determinism": {
+    "policy": "strict",
+    "thread_count": 1,
+    "platform_contract": "same_platform_bytes"
+  },
+  "debug_artifact_policy": "failures",
+  "requested_outputs": ["svg", "preview", "manifest", "validation", "metrics"]
+}

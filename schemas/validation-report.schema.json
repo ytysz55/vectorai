@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vectorai.local/validation-report.schema.json",
+  "title": "VectorAI Validation Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "status",
+    "source_sha256",
+    "svg_sha256",
+    "gates",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["passed", "failed", "needs_review"]
+    },
+    "source_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "svg_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/gate"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "severity", "outcome", "message"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_.-]+$"
+        },
+        "category": {
+          "enum": [
+            "security",
+            "schema",
+            "geometry",
+            "topology",
+            "fidelity",
+            "editability",
+            "performance",
+            "renderer",
+            "cut_ready",
+            "turkish_text"
+          ]
+        },
+        "severity": {
+          "enum": ["hard", "soft", "info"]
+        },
+        "outcome": {
+          "enum": ["passed", "failed", "skipped"]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metric": {
+          "type": "number"
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hard_failures", "soft_failures", "warnings"],
+      "properties": {
+        "hard_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "soft_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

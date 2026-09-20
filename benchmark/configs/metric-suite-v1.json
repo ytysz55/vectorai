@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "metric_suite": "vectorai-benchmark-v1",
+  "priority_order": [
+    "exact_topology",
+    "render_fidelity",
+    "editability",
+    "runtime"
+  ],
+  "topology": {
+    "version": "1.0.0",
+    "connectivity": 4,
+    "metrics": [
+      "exact_topology",
+      "component_error",
+      "hole_error",
+      "euler_error",
+      "adjacency_f1",
+      "junction_degree_accuracy"
+    ]
+  },
+  "geometry": {
+    "version": "1.0.0",
+    "distance_normalization": "image_diagonal",
+    "metrics": ["symmetric_chamfer", "hausdorff", "corner_f1", "junction_f1"]
+  },
+  "fidelity": {
+    "version": "1.0.0",
+    "colorspace": "linear_srgb",
+    "alpha_model": "premultiplied",
+    "metrics": ["linear_rgb_mae", "alpha_mae", "premultiplied_rgba_rmse"]
+  },
+  "editability": {
+    "version": "1.0.0",
+    "metrics": ["path_count", "primitive_count", "segment_count", "node_count"]
+  },
+  "resources": {
+    "version": "1.0.0",
+    "metrics": ["wall_time_ms", "cpu_time_ms", "peak_rss_bytes"],
+    "semantic_digest": false
+  }
+}

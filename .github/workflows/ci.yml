@@ -1,0 +1,180 @@
+---
+name: foundation-and-benchmark-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-and-benchmark-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} / C++ and Python
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Validate Python and JSON contracts
+        run: uv run pytest --cov=python --cov-report=term-missing
+
+      - name: Lint and format-check Python
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy
+
+      - name: Configure native foundation
+        run: cmake --preset dev-debug -DVECTORAI_WARNINGS_AS_ERRORS=ON
+
+      - name: Build native foundation
+        run: cmake --build --preset dev-debug --parallel 2
+
+      - name: Test native foundation
+        run: ctest --preset dev-debug
+
+      - name: Verify native binary repeatability
+        shell: bash
+        run: |
+          suffix=""
+          if [[ "$RUNNER_OS" == "Windows" ]]; then suffix=".exe"; fi
+          uv run python tools/engine/run_binary_smoke.py \
+            --native "out/build/dev-debug/vectorai_binary_cli${suffix}"
+
+      - name: Configure native sanitizers
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cmake -S . -B out/build/sanitized -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DVECTORAI_WARNINGS_AS_ERRORS=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined" \
+            -DCMAKE_CXX_FLAGS_DEBUG="-fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Run native sanitizer suite
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cmake --build out/build/sanitized --parallel 2
+          ASAN_OPTIONS=detect_leaks=1 \
+            UBSAN_OPTIONS=print_stacktrace=1 \
+            ctest --test-dir out/build/sanitized --output-on-failure
+
+      - name: Generate development notice index
+        run: uv run python tools/legal/generate_notices.py
+
+      - name: Verify generated files are current
+        shell: bash
+        run: git diff --exit-code
+
+  benchmark-smoke:
+    name: Ubuntu / pinned two-baseline smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: "1"
+      TOOL_DIR: /tmp/vectorai-benchmark-tools
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Provision pinned reference and baseline tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$TOOL_DIR/vtracer" "$TOOL_DIR/resvg"
+
+          curl --fail --location --silent --show-error \
+            --output "$TOOL_DIR/vtracer.tar.gz" \
+            https://github.com/visioncortex/vtracer/releases/download/0.6.4/vtracer-x86_64-unknown-linux-musl.tar.gz
+          printf '%s%s  %s\n' \
+            '9290ba0c90e224d6d212836dff549140' \
+            '7c1718bcb72f80b2b5a4a01816df5e40' \
+            "$TOOL_DIR/vtracer.tar.gz" \
+            | sha256sum --check --strict
+          tar -xzf "$TOOL_DIR/vtracer.tar.gz" -C "$TOOL_DIR/vtracer"
+
+          curl --fail --location --silent --show-error \
+            --output "$TOOL_DIR/resvg.tar.gz" \
+            https://github.com/linebender/resvg/releases/download/v0.47.0/resvg-linux-x86_64.tar.gz
+          printf '%s%s  %s\n' \
+            '5c84dcbcd032fe7e8d96e616fd6807a2' \
+            'f9df6561d2e6582b37e91e63c6cb4fe7' \
+            "$TOOL_DIR/resvg.tar.gz" \
+            | sha256sum --check --strict
+          tar -xzf "$TOOL_DIR/resvg.tar.gz" -C "$TOOL_DIR/resvg"
+
+          curl --fail --location --silent --show-error \
+            --output "$TOOL_DIR/potrace.tar.gz" \
+            https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz
+          printf '%s%s  %s\n' \
+            'be8248a17dedd6ccbaab2fcc45835bb0' \
+            '502d062e40fbded3bc56028ce5eb7acc' \
+            "$TOOL_DIR/potrace.tar.gz" \
+            | sha256sum --check --strict
+          tar -xzf "$TOOL_DIR/potrace.tar.gz" -C "$TOOL_DIR"
+          (
+            cd "$TOOL_DIR/potrace-1.16"
+            ./configure --disable-shared
+            make -j2
+          )
+
+      - name: Run repeatability smoke with VTracer and Potrace
+        shell: bash
+        run: |
+          uv run python tools/benchmark/run_smoke.py \
+            --vtracer "$TOOL_DIR/vtracer/vtracer" \
+            --potrace "$TOOL_DIR/potrace-1.16/src/potrace" \
+            --resvg "$TOOL_DIR/resvg/resvg" \
+            --output benchmark/reports/smoke \
+            --verify-repeat

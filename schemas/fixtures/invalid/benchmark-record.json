@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "design_family_id": "",
+  "case_id": "bad case id",
+  "split": "training",
+  "primary_class": "photo",
+  "tags": ["duplicate", "duplicate"],
+  "source": {
+    "sha256": "bad",
+    "provenance": "",
+    "license_id": ""
+  },
+  "variant": {
+    "tier": "T9",
+    "seed": -1,
+    "width": 0,
+    "height": 0,
+    "parameters": {}
+  },
+  "runner": {
+    "name": "",
+    "version": "",
+    "preset": "",
+    "status": "maybe",
+    "run_manifest_sha256": "bad"
+  },
+  "metrics": [],
+  "artifacts": []
+}

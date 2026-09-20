@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "name": "VTracer",
+  "license": "MIT",
+  "version": "0.6.4",
+  "version_output": "visioncortex VTracer 0.6.4",
+  "platforms": {
+    "linux-x86_64": {
+      "archive_url": "https://github.com/visioncortex/vtracer/releases/download/0.6.4/vtracer-x86_64-unknown-linux-musl.tar.gz",
+      "archive_sha256": "9290ba0c90e224d6d212836dff5491407c1718bcb72f80b2b5a4a01816df5e40",
+      "executable_sha256": "6f31499257076bd94de3e976844cf7ca5643f1e194a2bf0599b13f3719452aec"
+    },
+    "windows-x86_64": {
+      "archive_url": "https://github.com/visioncortex/vtracer/releases/download/0.6.4/vtracer-x86_64-pc-windows-msvc.zip",
+      "archive_sha256": "6b5bc17a6b017129ee40461df254f65d16f3b494c001a8541d41861066b716bf",
+      "executable_sha256": "4ad8d35e566cd15caf582063b8349bd082b8fa2bd461e99d116fc63ad8fdeca0"
+    }
+  },
+  "presets": {
+    "faithful": {
+      "arguments": [
+        "--colormode", "color", "--hierarchical", "stacked", "--mode", "spline",
+        "--filter_speckle", "1", "--color_precision", "8", "--corner_threshold", "60",
+        "--segment_length", "4", "--splice_threshold", "45", "--path_precision", "3"
+      ]
+    },
+    "geometric": {
+      "arguments": [
+        "--colormode", "color", "--hierarchical", "cutout", "--mode", "spline",
+        "--filter_speckle", "4", "--color_precision", "6", "--corner_threshold", "80",
+        "--segment_length", "8", "--splice_threshold", "60", "--path_precision", "3"
+      ]
+    },
+    "minimal": {
+      "arguments": [
+        "--colormode", "color", "--hierarchical", "cutout", "--mode", "spline",
+        "--filter_speckle", "8", "--color_precision", "5", "--corner_threshold", "100",
+        "--segment_length", "12", "--splice_threshold", "75", "--path_precision", "2"
+      ]
+    }
+  }
+}

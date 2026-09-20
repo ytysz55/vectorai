@@ -1,0 +1,40 @@
+# Build outputs
+out/
+build/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+# Web
+node_modules/
+.npm/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# Benchmark and generated artifacts
+artifacts/
+benchmark/reports/*
+!benchmark/reports/.gitkeep
+datasets/generated/
+benchmark/goldens/generated/
+datasets/cache/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local secrets and environment
+.env
+.env.*
+!.env.example

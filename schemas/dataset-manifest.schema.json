@@ -1,0 +1,394 @@
+{
+  "$defs": {
+    "BenchmarkCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "family_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Family Id",
+          "type": "string"
+        },
+        "raster_asset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAsset"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "variant": {
+          "$ref": "#/$defs/Variant"
+        }
+      },
+      "required": [
+        "case_id",
+        "family_id",
+        "variant"
+      ],
+      "title": "BenchmarkCase",
+      "type": "object"
+    },
+    "DesignFamily": {
+      "additionalProperties": false,
+      "properties": {
+        "family_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+          "title": "Family Id",
+          "type": "string"
+        },
+        "ground_truth": {
+          "$ref": "#/$defs/GroundTruth"
+        },
+        "primary_class": {
+          "$ref": "#/$defs/PrimaryClass"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceAsset"
+        },
+        "split": {
+          "$ref": "#/$defs/Split"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "family_id",
+        "split",
+        "primary_class",
+        "source",
+        "ground_truth"
+      ],
+      "title": "DesignFamily",
+      "type": "object"
+    },
+    "GeometryTruth": {
+      "additionalProperties": false,
+      "properties": {
+        "contours": {
+          "default": [],
+          "items": {
+            "items": {
+              "$ref": "#/$defs/Point"
+            },
+            "type": "array"
+          },
+          "title": "Contours",
+          "type": "array"
+        },
+        "corners": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "title": "Corners",
+          "type": "array"
+        },
+        "primitive_types": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Primitive Types",
+          "type": "array"
+        }
+      },
+      "title": "GeometryTruth",
+      "type": "object"
+    },
+    "GroundTruth": {
+      "additionalProperties": false,
+      "properties": {
+        "geometry": {
+          "$ref": "#/$defs/GeometryTruth",
+          "default": {
+            "contours": [],
+            "corners": [],
+            "primitive_types": []
+          }
+        },
+        "topology": {
+          "$ref": "#/$defs/TopologyTruth"
+        },
+        "vector_asset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAsset"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "topology"
+      ],
+      "title": "GroundTruth",
+      "type": "object"
+    },
+    "JsonScalar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "JsonValue": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/JsonScalar"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "PrimaryClass": {
+      "enum": [
+        "logo",
+        "icon",
+        "turkish_text",
+        "jpeg_blur",
+        "alpha",
+        "line_art"
+      ],
+      "title": "PrimaryClass",
+      "type": "string"
+    },
+    "SourceAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_ref": {
+          "minLength": 1,
+          "title": "Artifact Ref",
+          "type": "string"
+        },
+        "license_id": {
+          "minLength": 1,
+          "title": "License Id",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "provenance": {
+          "minLength": 1,
+          "title": "Provenance",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "media_type",
+        "artifact_ref",
+        "provenance",
+        "license_id"
+      ],
+      "title": "SourceAsset",
+      "type": "object"
+    },
+    "Split": {
+      "enum": [
+        "development",
+        "validation",
+        "locked_test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "TopologyTruth": {
+      "additionalProperties": false,
+      "properties": {
+        "adjacency": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Adjacency",
+          "type": "array"
+        },
+        "components": {
+          "minimum": 0,
+          "title": "Components",
+          "type": "integer"
+        },
+        "holes": {
+          "minimum": 0,
+          "title": "Holes",
+          "type": "integer"
+        },
+        "junction_degrees": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Junction Degrees",
+          "type": "array"
+        }
+      },
+      "required": [
+        "components",
+        "holes"
+      ],
+      "title": "TopologyTruth",
+      "type": "object"
+    },
+    "Variant": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "tier": {
+          "$ref": "#/$defs/VariantTier"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tier",
+        "seed",
+        "width",
+        "height"
+      ],
+      "title": "Variant",
+      "type": "object"
+    },
+    "VariantTier": {
+      "enum": [
+        "T0",
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "title": "VariantTier",
+      "type": "string"
+    }
+  },
+  "$id": "https://vectorai.local/schemas/dataset-manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/BenchmarkCase"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "dataset_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "families": {
+      "items": {
+        "$ref": "#/$defs/DesignFamily"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "schema_version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "families",
+    "cases"
+  ],
+  "title": "DatasetManifest",
+  "type": "object"
+}

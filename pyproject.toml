@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vectorai-tools"
+version = "0.1.0"
+description = "VectorAI CLI, benchmark orchestration, and schema validation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "VectorAI" }]
+dependencies = [
+  "fastapi>=0.115,<1",
+  "jsonschema>=4.23,<5",
+  "numpy>=2.1,<3",
+  "pillow>=11,<13",
+  "psutil>=6,<8",
+  "uvicorn>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+  "ruff>=0.9,<1"
+]
+
+[project.scripts]
+vectorai = "vectorai_cli.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "python/vectorai_cli",
+  "python/vectorai_bench",
+  "python/vectorai_engine",
+  "python/vectorai_api"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+addopts = "--strict-config --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["python"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "python"
+packages = ["vectorai_cli", "vectorai_bench", "vectorai_engine", "vectorai_api"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+]

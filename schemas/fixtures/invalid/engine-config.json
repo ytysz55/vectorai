@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "profile_version": "0.1.0",
+  "mode": "photorealistic",
+  "seed": -1,
+  "resource_limits": {},
+  "determinism": {
+    "policy": "best_effort",
+    "thread_count": 0,
+    "platform_contract": "unknown"
+  },
+  "debug_artifact_policy": "sometimes",
+  "requested_outputs": []
+}

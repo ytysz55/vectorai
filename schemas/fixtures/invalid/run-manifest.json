@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "job-001",
+  "input": {
+    "sha256": "not-a-hash",
+    "bytes": 0,
+    "media_type": "image/tiff"
+  },
+  "engine": {},
+  "configuration": {},
+  "platform": {
+    "os": "macos",
+    "arch": "arm64",
+    "cpu": "test",
+    "compiler": "test"
+  },
+  "stages": [],
+  "resources": {},
+  "summary": {},
+  "warnings": [],
+  "fallbacks": [],
+  "final_status": "maybe",
+  "artifacts": []
+}

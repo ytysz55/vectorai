@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "job-001",
+  "status": "passed",
+  "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "svg_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "gates": [
+    {
+      "id": "SVG.PARSE",
+      "category": "schema",
+      "severity": "hard",
+      "outcome": "passed",
+      "message": "SVG parsed successfully"
+    },
+    {
+      "id": "TOPOLOGY.EXACT",
+      "category": "topology",
+      "severity": "hard",
+      "outcome": "passed",
+      "message": "Component and hole counts match",
+      "metric": 1.0,
+      "threshold": 1.0,
+      "entity_ids": [0]
+    }
+  ],
+  "summary": {
+    "hard_failures": 0,
+    "soft_failures": 0,
+    "warnings": 0
+  }
+}

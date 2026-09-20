@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "vectorai",
+  "version-semver": "0.1.0",
+  "builtin-baseline": "b7fabe2af06cf10ede56a85eb59b7369e184eed0",
+  "description": "Topology-first raster-to-vector reconstruction engine",
+  "license": "Proprietary",
+  "supports": "(windows | linux) & x64",
+  "dependencies": []
+}

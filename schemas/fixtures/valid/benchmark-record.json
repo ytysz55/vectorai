@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "design_family_id": "logo-001",
+  "case_id": "logo-001-t2-seed0",
+  "split": "development",
+  "primary_class": "logo",
+  "tags": ["shared_edge", "low_resolution"],
+  "source": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "ground_truth_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "provenance": "procedural fixture",
+    "license_id": "LicenseRef-VectorAI-Synthetic"
+  },
+  "variant": {
+    "tier": "T2",
+    "seed": 0,
+    "width": 128,
+    "height": 128,
+    "parameters": {
+      "jpeg_quality": 40,
+      "blur_sigma": 0.6
+    }
+  },
+  "runner": {
+    "name": "vectorai",
+    "version": "0.1.0",
+    "preset": "geometric",
+    "status": "success",
+    "run_manifest_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "metrics": [
+    {
+      "name": "topology.exact",
+      "version": "1.0.0",
+      "value": 1.0,
+      "unit": "boolean",
+      "valid": true,
+      "higher_is_better": true
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "result.svg",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "media_type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "e1-smoke",
+  "families": [
+    {
+      "family_id": "synthetic-ring-001",
+      "split": "development",
+      "primary_class": "icon",
+      "tags": ["hole", "synthetic"],
+      "source": {
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "media_type": "image/svg+xml",
+        "artifact_ref": "generated://synthetic-ring-001/source.svg",
+        "provenance": "VectorAI deterministic procedural generator v1",
+        "license_id": "LicenseRef-VectorAI-Synthetic"
+      },
+      "ground_truth": {
+        "topology": {
+          "components": 1,
+          "holes": 1,
+          "adjacency": [],
+          "junction_degrees": []
+        },
+        "geometry": {
+          "contours": [],
+          "corners": [],
+          "primitive_types": ["circle", "circle"]
+        },
+        "vector_asset": {
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "media_type": "image/svg+xml",
+          "artifact_ref": "generated://synthetic-ring-001/ground-truth.svg",
+          "provenance": "VectorAI deterministic procedural generator v1",
+          "license_id": "LicenseRef-VectorAI-Synthetic"
+        }
+      }
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "synthetic-ring-001-t0",
+      "family_id": "synthetic-ring-001",
+      "variant": {
+        "tier": "T0",
+        "seed": 1001,
+        "width": 256,
+        "height": 256,
+        "parameters": {
+          "antialias_scale": 4
+        }
+      },
+      "raster_asset": null
+    }
+  ]
+}

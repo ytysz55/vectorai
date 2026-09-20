@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "name": "resvg",
+  "version": "0.47.0",
+  "version_output": "0.47.0",
+  "source": {
+    "archive_url": "https://github.com/linebender/resvg/releases/download/v0.47.0/resvg-0.47.0.tar.xz",
+    "archive_sha256": "22d12bf638479688f3762ac951446f51ca75cb24c6853b23384f96fda02096c5"
+  },
+  "platforms": {
+    "linux-x86_64": {
+      "archive_url": "https://github.com/linebender/resvg/releases/download/v0.47.0/resvg-linux-x86_64.tar.gz",
+      "archive_sha256": "5c84dcbcd032fe7e8d96e616fd6807a2f9df6561d2e6582b37e91e63c6cb4fe7",
+      "executable_sha256": "a53a45eafcaf3c04ceefc0c150c3d10fdf582d143d1ca5e4a7a64e661c55f02e"
+    },
+    "windows-x86_64": {
+      "archive_url": "https://github.com/linebender/resvg/releases/download/v0.47.0/resvg-win64.zip",
+      "archive_sha256": "5684e59ceaa53ce720b49efb441b0918ae99d04e8ce3f6f753664524592d67f1",
+      "executable_sha256": "433a7c744cff561ed64fcf73c7c04e239d7a07ae5f0aadbf1ba8471d63707402"
+    }
+  }
+}

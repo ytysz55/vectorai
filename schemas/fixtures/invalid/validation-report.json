@@ -1,0 +1,13 @@
+{
+  "schema_version": "2.0.0",
+  "job_id": "",
+  "status": "unknown",
+  "source_sha256": "bad",
+  "svg_sha256": "bad",
+  "gates": [],
+  "summary": {
+    "hard_failures": -1,
+    "soft_failures": 0,
+    "warnings": 0
+  }
+}

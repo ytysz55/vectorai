@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0.0",
+  "entries": [
+    {
+      "name": "OpenCV",
+      "version": "not-selected",
+      "spdx": "Apache-2.0",
+      "status": "allow",
+      "usage": "native-image-processing",
+      "source_url": "https://github.com/opencv/opencv",
+      "distributed": true,
+      "constraints": ["pin-exact-version", "audit-transitive-dependencies"]
+    },
+    {
+      "name": "Eigen",
+      "version": "not-selected",
+      "spdx": "MPL-2.0",
+      "status": "allow",
+      "usage": "native-linear-algebra",
+      "source_url": "https://gitlab.com/libeigen/eigen",
+      "distributed": true,
+      "constraints": ["preserve-notices"]
+    },
+    {
+      "name": "Ceres Solver",
+      "version": "not-selected",
+      "spdx": "Apache-2.0",
+      "status": "allow",
+      "usage": "native-continuous-optimizer",
+      "source_url": "https://github.com/ceres-solver/ceres-solver",
+      "distributed": true,
+      "constraints": ["WITH_SUITESPARSE=OFF", "audit-transitive-dependencies"]
+    },
+    {
+      "name": "Clipper2",
+      "version": "not-selected",
+      "spdx": "BSL-1.0",
+      "status": "allow",
+      "usage": "polygon-operations",
+      "source_url": "https://github.com/AngusJohnson/Clipper2",
+      "distributed": true,
+      "constraints": ["pin-exact-version", "preserve-notices"]
+    },
+    {
+      "name": "pybind11",
+      "version": "not-selected",
+      "spdx": "BSD-3-Clause",
+      "status": "allow",
+      "usage": "native-python-binding",
+      "source_url": "https://github.com/pybind/pybind11",
+      "distributed": true,
+      "constraints": ["coarse-grained-api"]
+    },
+    {
+      "name": "resvg",
+      "version": "0.47.0",
+      "spdx": "MIT OR Apache-2.0",
+      "status": "allow",
+      "usage": "reference-svg-renderer",
+      "source_url": "https://github.com/linebender/resvg",
+      "distributed": true,
+      "constraints": ["pin-executable-checksum", "preserve-selected-license"]
+    },
+    {
+      "name": "FastAPI",
+      "version": "not-selected",
+      "spdx": "MIT",
+      "status": "allow",
+      "usage": "localhost-api",
+      "source_url": "https://github.com/fastapi/fastapi",
+      "distributed": true,
+      "constraints": ["audit-python-lock"]
+    },
+    {
+      "name": "React",
+      "version": "not-selected",
+      "spdx": "MIT",
+      "status": "allow",
+      "usage": "local-first-web-ui",
+      "source_url": "https://github.com/facebook/react",
+      "distributed": true,
+      "constraints": ["audit-npm-lock"]
+    },
+    {
+      "name": "TypeScript",
+      "version": "not-selected",
+      "spdx": "Apache-2.0",
+      "status": "allow",
+      "usage": "web-build-toolchain",
+      "source_url": "https://github.com/microsoft/TypeScript",
+      "distributed": false,
+      "constraints": ["pin-exact-version"]
+    },
+    {
+      "name": "Tauri",
+      "version": "not-selected",
+      "spdx": "MIT OR Apache-2.0",
+      "status": "review",
+      "usage": "optional-desktop-wrapper",
+      "source_url": "https://github.com/tauri-apps/tauri",
+      "distributed": false,
+      "constraints": ["p2-only", "review-platform-webview"]
+    },
+    {
+      "name": "VTracer",
+      "version": "0.6.4",
+      "spdx": "MIT",
+      "status": "allow",
+      "usage": "benchmark-baseline",
+      "source_url": "https://github.com/visioncortex/vtracer",
+      "distributed": false,
+      "constraints": ["isolated-process", "pin-preset"]
+    },
+    {
+      "name": "PolyFit",
+      "version": "not-selected",
+      "spdx": "MIT",
+      "status": "review",
+      "usage": "research-reference",
+      "source_url": "https://github.com/dedoardo/polyfit",
+      "distributed": false,
+      "constraints": ["audit-submodules-before-code-use"]
+    },
+    {
+      "name": "PolyVectorization",
+      "version": "not-selected",
+      "spdx": "MIT",
+      "status": "review",
+      "usage": "research-reference",
+      "source_url": "https://github.com/bmpix/PolyVectorization",
+      "distributed": false,
+      "constraints": ["audit-legacy-dependencies"]
+    },
+    {
+      "name": "Potrace",
+      "version": "1.16",
+      "spdx": "GPL-2.0-or-later",
+      "status": "review",
+      "usage": "binary-benchmark-baseline",
+      "source_url": "https://potrace.sourceforge.net/",
+      "distributed": false,
+      "constraints": ["external-process-only", "never-link-or-copy-core-code"]
+    },
+    {
+      "name": "SuiteSparse CHOLMOD/SPQR",
+      "version": "not-selected",
+      "spdx": "GPL-2.0-or-later OR LicenseRef-SuiteSparse-Commercial",
+      "status": "deny",
+      "usage": "forbidden-optional-optimizer-backend",
+      "source_url": "https://github.com/DrTimothyAldenDavis/SuiteSparse",
+      "distributed": false,
+      "constraints": ["commercial-license-required"]
+    },
+    {
+      "name": "Inkscape",
+      "version": "not-selected",
+      "spdx": "GPL-2.0-or-later",
+      "status": "review",
+      "usage": "external-baseline-and-renderer",
+      "source_url": "https://gitlab.com/inkscape/inkscape",
+      "distributed": false,
+      "constraints": ["external-tool", "no-default-bundling"]
+    },
+    {
+      "name": "Chromium",
+      "version": "not-selected",
+      "spdx": "BSD-3-Clause AND LicenseRef-Chromium-ThirdParty",
+      "status": "review",
+      "usage": "renderer-compatibility-oracle",
+      "source_url": "https://chromium.googlesource.com/chromium/src",
+      "distributed": false,
+      "constraints": ["ci-or-system-tool", "audit-third-party-notices"]
+    },
+    {
+      "name": "Adobe Illustrator",
+      "version": "not-selected",
+      "spdx": "LicenseRef-Adobe-Proprietary",
+      "status": "review",
+      "usage": "manual-benchmark-baseline",
+      "source_url": "https://www.adobe.com/products/illustrator.html",
+      "distributed": false,
+      "constraints": ["licensed-operator", "record-version-and-preset"]
+    },
+    {
+      "name": "Vectorizer.AI",
+      "version": "service",
+      "spdx": "LicenseRef-VectorizerAI-Terms",
+      "status": "review",
+      "usage": "competitor-benchmark",
+      "source_url": "https://vectorizer.ai/",
+      "distributed": false,
+      "constraints": ["terms-or-written-permission-required", "no-training-use"]
+    }
+  ]
+}

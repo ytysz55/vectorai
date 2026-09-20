@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vectorai.local/run-manifest.schema.json",
+  "title": "VectorAI Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "input",
+    "engine",
+    "configuration",
+    "platform",
+    "stages",
+    "resources",
+    "summary",
+    "warnings",
+    "fallbacks",
+    "final_status",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "engine": {
+      "$ref": "#/$defs/engine"
+    },
+    "configuration": {
+      "$ref": "#/$defs/configuration"
+    },
+    "platform": {
+      "$ref": "#/$defs/platform"
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "fallbacks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "final_status": {
+      "$ref": "#/$defs/run_status"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "run_status": {
+      "enum": ["success", "degraded", "needs_review", "unsupported", "failed"]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "bytes", "media_type"],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "media_type": {
+          "enum": ["image/png", "image/jpeg", "image/webp"]
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "build_id", "git_commit", "dirty"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+        },
+        "build_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "git_commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "dirty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config_sha256",
+        "profile_sha256",
+        "profile_version",
+        "mode",
+        "seed",
+        "thread_count",
+        "determinism_policy"
+      ],
+      "properties": {
+        "config_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "profile_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "profile_version": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": ["faithful", "geometric", "minimal", "cut_ready"]
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "thread_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "determinism_policy": {
+          "const": "strict"
+        }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "arch", "cpu", "compiler"],
+      "properties": {
+        "os": {
+          "enum": ["windows", "linux"]
+        },
+        "arch": {
+          "const": "x86_64"
+        },
+        "cpu": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gpu": {
+          "type": ["string", "null"]
+        },
+        "compiler": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "duration_ms"],
+      "properties": {
+        "name": {
+          "enum": [
+            "decode",
+            "normalize",
+            "reliability",
+            "palette",
+            "segmentation",
+            "topology",
+            "boundary",
+            "candidate_generation",
+            "stroke",
+            "model_selection",
+            "optimization",
+            "render_and_rank",
+            "export",
+            "validation"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/run_status"
+        },
+        "duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_duration_ms", "peak_rss_mb"],
+      "properties": {
+        "total_duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "peak_rss_mb": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regions", "edges", "candidates", "optimizer_iterations"],
+      "properties": {
+        "regions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edges": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "optimizer_iterations": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "stage", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]+$"
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "media_type", "sha256", "bytes"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "media_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
