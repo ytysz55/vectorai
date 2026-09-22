@@ -25,9 +25,11 @@ jobs:
         include:
           - os: ubuntu-24.04
             python: .venv/bin/python
+            sync_python: /usr/bin/python3
             native_suffix: ""
           - os: windows-2022
             python: .\.venv\Scripts\python.exe
+            sync_python: "3.12"
             native_suffix: .exe
 
     env:
@@ -51,7 +53,9 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python dependencies
-        run: uv sync --locked --all-extras --dev
+        run: >-
+          uv sync --python ${{ matrix.sync_python }}
+          --locked --all-extras --dev
 
       - name: Validate Python and JSON contracts
         run: >-
