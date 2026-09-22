@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
+
+from python.tests._support import active_python_executable
 
 from vectorai_bench.external_tools import ToolStatus
 from vectorai_bench.renderers import ResvgAdapter
@@ -47,7 +48,7 @@ Image.new('RGBA', (width, height), {color!r}).save(output)
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_svg(path: Path) -> None:

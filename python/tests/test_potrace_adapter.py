@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
+
+from python.tests._support import active_python_executable
 
 from vectorai_bench.baselines import PotraceAdapter, load_potrace_lock
 from vectorai_bench.external_tools import ToolStatus, file_sha256
@@ -32,7 +33,7 @@ output.write_text(
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_pbm(path: Path) -> None:
@@ -59,7 +60,7 @@ def test_potrace_runs_only_through_isolated_process(tmp_path: Path) -> None:
         presets=lock.presets,
         command_prefix=command,
         expected_version_output=lock.version_output,
-        expected_executable_sha256=file_sha256(Path(sys.executable)),
+        expected_executable_sha256=file_sha256(Path(active_python_executable())),
     )
     result = adapter.vectorize(source, output, preset_name="faithful")
     assert result.status is ToolStatus.SUCCESS

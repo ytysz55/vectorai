@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 from PIL import Image
+from python.tests._support import active_python_executable
 
 from vectorai_bench.fixtures import generate_fixture_set
 from vectorai_engine import RunStatus
@@ -44,7 +44,7 @@ Image.new('RGBA', (width, height), (20, 30, 40, 255)).save(output)
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def input_image(path: Path) -> None:

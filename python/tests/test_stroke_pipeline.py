@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from python.tests._support import active_python_executable
 
 from vectorai_engine.errors import RunStatus
 from vectorai_engine.stroke_pipeline import StrokePipelineConfig, run_stroke_pipeline
@@ -27,7 +27,7 @@ Image.new('RGBA', (width, height), (0, 0, 0, 0)).save(Path(sys.argv[-1]))
         + "\n",
         encoding="utf-8",
     )
-    return sys.executable, str(path)
+    return active_python_executable(), str(path)
 
 
 def test_stroke_pipeline_writes_arbitrated_bundle(tmp_path: Path) -> None:

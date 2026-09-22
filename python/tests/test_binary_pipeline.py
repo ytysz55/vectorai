@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, cast
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 from PIL import Image, ImageDraw
+from python.tests._support import active_python_executable
 
 from vectorai_cli.__main__ import main
 from vectorai_engine import BinaryPipelineConfig, RunStatus, run_binary_pipeline
@@ -57,7 +57,7 @@ value('--report').write_text(json.dumps(report, sort_keys=True) + '\\n', encodin
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_fake_renderer(path: Path) -> tuple[str, ...]:
@@ -93,7 +93,7 @@ Image.new('RGBA', (width, height), (0, 0, 0, 0)).save(output)
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def load_object(path: Path) -> dict[str, Any]:
@@ -105,7 +105,7 @@ def pipeline_config(tmp_path: Path) -> BinaryPipelineConfig:
     native = write_fake_native(tmp_path / "fake_native.py")
     renderer = write_fake_renderer(tmp_path / "fake_renderer.py")
     return BinaryPipelineConfig(
-        native_executable=Path(sys.executable),
+        native_executable=Path(active_python_executable()),
         native_command_prefix=native,
         resvg_command_prefix=renderer,
         inkscape_command_prefix=renderer,
@@ -133,8 +133,8 @@ def test_pipeline_writes_schema_valid_artifact_bundle(tmp_path: Path) -> None:
     validation = load_object(bundle.validation_path)
     manifest_schema = load_object(ROOT / "schemas" / "run-manifest.schema.json")
     validation_schema = load_object(ROOT / "schemas" / "validation-report.schema.json")
-    Draft202012Validator(manifest_schema).validate(manifest)
-    Draft202012Validator(validation_schema).validate(validation)
+    cast(Any, Draft202012Validator(manifest_schema).validate)(manifest)
+    cast(Any, Draft202012Validator(validation_schema).validate)(validation)
     assert manifest["summary"] == {
         "candidates": 3,
         "edges": 20,
@@ -178,7 +178,7 @@ def test_cli_vectorize_reports_bundle(tmp_path: Path, capsys: object) -> None:
         ]
     )
     assert exit_code == 2
-    captured = capsys.readouterr()  # type: ignore[attr-defined]
-    error = json.loads(captured.err)
+    captured = cast(Any, capsys).readouterr()
+    error = json.loads(cast(str, captured.err))
     assert error["code"] == "UNSUPPORTED_INPUT"
-    assert native[0] == sys.executable
+    assert native[0] == active_python_executable()

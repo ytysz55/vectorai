@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from PIL import Image
+from python.tests._support import active_python_executable
 
 from vectorai_bench.baselines import VTracerAdapter, load_vtracer_lock
 from vectorai_bench.external_tools import ToolStatus, file_sha256
@@ -36,7 +36,7 @@ else:
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_png(path: Path) -> None:
@@ -62,7 +62,7 @@ def test_vtracer_success_records_identity_preset_and_hash(tmp_path: Path) -> Non
         presets=lock.presets,
         command_prefix=command,
         expected_version_output=lock.version_output,
-        expected_executable_sha256=file_sha256(Path(sys.executable)),
+        expected_executable_sha256=file_sha256(Path(active_python_executable())),
     )
     result = adapter.vectorize(raster, output, preset_name="faithful")
     assert result.status is ToolStatus.SUCCESS

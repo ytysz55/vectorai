@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
+
+from python.tests._support import active_python_executable
 
 from vectorai_bench.baselines import (
     PotraceAdapter,
@@ -40,7 +41,7 @@ output.write_text(
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_fake_resvg(path: Path) -> tuple[str, ...]:
@@ -65,13 +66,13 @@ image.save(output)
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def adapters(tmp_path: Path) -> tuple[VTracerAdapter, PotraceAdapter, ResvgAdapter]:
     vtracer_lock = load_vtracer_lock(CONFIGS / "vtracer.lock.json", "windows-x86_64")
     potrace_lock = load_potrace_lock(CONFIGS / "potrace.lock.json", "windows-x86_64")
-    executable_sha = file_sha256(Path(sys.executable))
+    executable_sha = file_sha256(Path(active_python_executable()))
     return (
         VTracerAdapter(
             presets=vtracer_lock.presets,

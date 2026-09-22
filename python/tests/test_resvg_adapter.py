@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from PIL import Image
+from python.tests._support import active_python_executable
 
 from vectorai_bench.external_tools import ToolStatus, file_sha256
 from vectorai_bench.renderers import ResvgAdapter, load_resvg_release
@@ -36,7 +36,7 @@ Image.new('RGBA', (width, height), (10, 20, 30, 255)).save(output)
         + "\n",
         encoding="utf-8",
     )
-    return (sys.executable, str(path))
+    return (active_python_executable(), str(path))
 
 
 def write_svg(path: Path) -> None:
@@ -71,7 +71,7 @@ def test_fake_renderer_is_probed_and_output_is_validated(tmp_path: Path) -> None
     adapter = ResvgAdapter(
         command_prefix=command,
         expected_version_output="0.47.0",
-        expected_executable_sha256=file_sha256(Path(sys.executable)),
+        expected_executable_sha256=file_sha256(Path(active_python_executable())),
     )
     result = adapter.render(svg, output, width=40, height=30)
     assert result.status is ToolStatus.SUCCESS

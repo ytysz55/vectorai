@@ -4,13 +4,13 @@ import io
 import json
 import socket
 import subprocess
-import sys
 import time
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from PIL import Image, ImageDraw
+from python.tests._support import active_python_executable
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -96,10 +96,10 @@ def test_loopback_api_vectorizes_and_serves_confined_artifacts(tmp_path: Path) -
     script = fake_resvg(tmp_path / "fake_resvg.py")
     process = subprocess.Popen(
         (
-            sys.executable,
+            active_python_executable(),
             "tools/demo/serve_local_api.py",
             "--resvg-command",
-            sys.executable,
+            active_python_executable(),
             str(script),
             "--jobs-dir",
             str(tmp_path / "jobs"),
