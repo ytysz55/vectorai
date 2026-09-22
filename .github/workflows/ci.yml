@@ -22,7 +22,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        include:
+          - os: ubuntu-24.04
+            python: .venv/bin/python
+            native_suffix: ""
+          - os: windows-2022
+            python: .\.venv\Scripts\python.exe
+            native_suffix: .exe
 
     env:
       PYTHONUTF8: "1"
@@ -48,7 +54,10 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Validate Python and JSON contracts
-        run: uv run python -m pytest --cov=python --cov-report=term-missing
+        run: >-
+          ${{ matrix.python }} -m pytest
+          --cov=python
+          --cov-report=term-missing
 
       - name: Lint and format-check Python
         run: |
@@ -66,12 +75,10 @@ jobs:
         run: ctest --preset dev-debug
 
       - name: Verify native binary repeatability
-        shell: bash
-        run: |
-          suffix=""
-          if [[ "$RUNNER_OS" == "Windows" ]]; then suffix=".exe"; fi
-          uv run python tools/engine/run_binary_smoke.py \
-            --native "out/build/dev-debug/vectorai_binary_cli${suffix}"
+        run: >-
+          ${{ matrix.python }} tools/engine/run_binary_smoke.py
+          --native
+          out/build/dev-debug/vectorai_binary_cli${{ matrix.native_suffix }}
 
       - name: Configure native sanitizers
         if: runner.os == 'Linux'
