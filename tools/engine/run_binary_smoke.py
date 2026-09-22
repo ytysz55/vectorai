@@ -45,7 +45,17 @@ def run_once(native: Path, fixture: Path, directory: Path) -> tuple[bytes, bytes
         timeout=30.0,
     )
     if completed.returncode != 0:
-        raise RuntimeError(completed.stderr or completed.stdout or "native binary smoke failed")
+        report_detail = ""
+        if report.is_file():
+            report_text = report.read_text(encoding="utf-8", errors="replace").strip()
+            report_detail = f"; report={report_text}"
+        process_detail = (completed.stderr or completed.stdout).strip()
+        if process_detail:
+            process_detail = f"; process={process_detail}"
+        raise RuntimeError(
+            f"native binary smoke failed with exit code {completed.returncode}"
+            f"{report_detail}{process_detail}"
+        )
     try:
         report_bytes = report.read_bytes()
         payload = json.loads(report_bytes)

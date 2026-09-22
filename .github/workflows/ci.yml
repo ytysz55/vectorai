@@ -48,7 +48,7 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Validate Python and JSON contracts
-        run: uv run pytest --cov=python --cov-report=term-missing
+        run: uv run python -m pytest --cov=python --cov-report=term-missing
 
       - name: Lint and format-check Python
         run: |
