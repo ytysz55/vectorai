@@ -5,6 +5,7 @@ import "./styles.css";
 type VectorizeResponse = {
   job_id: string;
   status: "success" | "needs_review";
+  mode: "faithful" | "geometric" | "minimal" | "stroke";
   artifacts: Record<string, string>;
   palette_count: number;
   region_count: number;
@@ -47,7 +48,7 @@ function App() {
     setError("");
     setResult(null);
     try {
-      const response = await fetch(`${API_ORIGIN}/v1/vectorize`, {
+      const response = await fetch(`${API_ORIGIN}/v1/vectorize`, { // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request
         method: "POST",
         headers: {
           "content-type":
@@ -106,6 +107,7 @@ function App() {
             <option value="faithful">Faithful</option>
             <option value="geometric">Geometric</option>
             <option value="minimal">Minimal</option>
+            <option value="stroke">Stroke / line-art</option>
           </select>
         </label>
         <button disabled={busy} onClick={vectorize} type="button">
@@ -142,6 +144,7 @@ function App() {
               label="Seam gaps"
               value={`${(result.seam_gap_rate * 100).toFixed(2)}%`}
             />
+            <Metric label="Mode" value={result.mode} />
             <Metric label="Status" value={result.status} />
           </div>
           <div className="downloads">

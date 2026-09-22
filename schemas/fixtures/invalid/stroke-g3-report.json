@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "procedural-e4-stroke-v1",
+  "semantic_digest": "not-a-digest",
+  "confusion_matrix": {},
+  "evaluation": {
+    "passed": true,
+    "routing_accuracy": 1.5,
+    "connectivity_accuracy": 1.0,
+    "junction_accuracy": 1.0,
+    "maximum_centerline_p95": 0.5,
+    "mean_width_error": 0.25,
+    "style_accuracy": 1.0,
+    "fidelity_band_rate": 1.0,
+    "node_advantage_vs_fill": 0.5,
+    "cut_outline_rate": 1.0,
+    "hard_failure_count": 0,
+    "criteria": {}
+  },
+  "measurements": []
+}

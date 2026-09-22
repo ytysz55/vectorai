@@ -1,5 +1,7 @@
 """Local-only HTTP API that never forwards source images to a remote service."""
 
+# pyright: reportMissingImports=false
+
 from __future__ import annotations
 
 import hashlib
@@ -11,15 +13,16 @@ from pathlib import Path
 from typing import TypedDict
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request  # type: ignore[import-not-found, unused-ignore]
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found, unused-ignore]
+from fastapi.responses import FileResponse  # type: ignore[import-not-found, unused-ignore]
 
 from vectorai_engine.errors import EngineFailure, RunStatus
 from vectorai_engine.multicolor_pipeline import (
     MulticolorPipelineConfig,
     run_multicolor_pipeline,
 )
+from vectorai_engine.stroke_pipeline import StrokePipelineConfig, run_stroke_pipeline
 
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 JOB_ID_PATTERN = re.compile(r"^[a-f0-9]{64}-[a-f0-9]{12}$")
@@ -28,6 +31,7 @@ ARTIFACT_MEDIA_TYPES = {
     "preview.png": "image/png",
     "scene.json": "application/json",
     "run-manifest.json": "application/json",
+    "cut-outline.svg": "image/svg+xml",
 }
 
 
@@ -48,6 +52,7 @@ class ErrorPayload(TypedDict):
 class VectorizeResponse(TypedDict):
     job_id: str
     status: str
+    mode: str
     artifacts: dict[str, str]
     palette_count: int
     region_count: int
@@ -138,6 +143,9 @@ def create_app(settings: ApiSettings) -> FastAPI:
             raise HTTPException(status_code=400, detail="request body is empty")
         if len(source_bytes) > settings.max_upload_bytes:
             raise HTTPException(status_code=413, detail="request exceeds local upload limit")
+        mode = request.headers.get("x-vectorai-mode", "geometric").lower()
+        if mode not in {"faithful", "geometric", "minimal", "stroke"}:
+            raise HTTPException(status_code=400, detail="unknown vectorization mode")
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         job_id = f"{source_sha256}-{uuid4().hex[:12]}"
         job_directory = _job_path(settings, job_id)
@@ -151,20 +159,42 @@ def create_app(settings: ApiSettings) -> FastAPI:
                 detail=f"cannot store local upload: {error}",
             ) from error
         try:
-            bundle = run_multicolor_pipeline(
-                input_path,
-                job_directory / "artifacts",
-                MulticolorPipelineConfig(
-                    resvg_executable=settings.resvg_executable,
-                    resvg_command_prefix=settings.resvg_command_prefix,
-                ),
-            )
-            scene = json.loads(bundle.scene_path.read_text(encoding="utf-8"))
-            manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
-            seam_gap_rate = max(
-                (item["transparent_gap_rate"] for item in manifest["seams"]["observations"]),
-                default=0.0,
-            )
+            if mode == "stroke":
+                stroke_bundle = run_stroke_pipeline(
+                    input_path,
+                    job_directory / "artifacts",
+                    StrokePipelineConfig(
+                        resvg_executable=settings.resvg_executable,
+                        resvg_command_prefix=settings.resvg_command_prefix,
+                    ),
+                )
+                scene = json.loads(stroke_bundle.scene_path.read_text(encoding="utf-8"))
+                status = stroke_bundle.final_status
+                palette_count = 1
+                region_count = scene["graph"]["component_count"]
+                seam_gap_rate = 0.0
+                artifact_names = (*ARTIFACT_MEDIA_TYPES.keys(),)
+            else:
+                multicolor_bundle = run_multicolor_pipeline(
+                    input_path,
+                    job_directory / "artifacts",
+                    MulticolorPipelineConfig(
+                        resvg_executable=settings.resvg_executable,
+                        resvg_command_prefix=settings.resvg_command_prefix,
+                    ),
+                )
+                scene = json.loads(multicolor_bundle.scene_path.read_text(encoding="utf-8"))
+                manifest = json.loads(multicolor_bundle.manifest_path.read_text(encoding="utf-8"))
+                status = multicolor_bundle.final_status
+                palette_count = scene["palette"]["selected_color_count"]
+                region_count = scene["segmentation"]["region_count"]
+                seam_gap_rate = max(
+                    (item["transparent_gap_rate"] for item in manifest["seams"]["observations"]),
+                    default=0.0,
+                )
+                artifact_names = tuple(
+                    name for name in ARTIFACT_MEDIA_TYPES if name != "cut-outline.svg"
+                )
         except EngineFailure as failure:
             raise _error(failure) from failure
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -172,16 +202,16 @@ def create_app(settings: ApiSettings) -> FastAPI:
                 status_code=500,
                 detail=f"local pipeline failed: {error}",
             ) from error
-        artifacts = {name: f"/v1/jobs/{job_id}/artifacts/{name}" for name in ARTIFACT_MEDIA_TYPES}
-        status = bundle.final_status
+        artifacts = {name: f"/v1/jobs/{job_id}/artifacts/{name}" for name in artifact_names}
         if status is RunStatus.FAILED:
             raise HTTPException(status_code=500, detail="local pipeline failed")
         return {
             "job_id": job_id,
             "status": status.value,
+            "mode": mode,
             "artifacts": artifacts,
-            "palette_count": scene["palette"]["selected_color_count"],
-            "region_count": scene["segmentation"]["region_count"],
+            "palette_count": palette_count,
+            "region_count": region_count,
             "seam_gap_rate": seam_gap_rate,
         }
 

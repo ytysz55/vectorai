@@ -18,6 +18,7 @@ SCHEMA_NAMES = (
     "dataset-manifest",
     "e2-g1-report",
     "multicolor-g2-report",
+    "stroke-g3-report",
 )
 
 

@@ -10,6 +10,8 @@ All public JSON artifacts use JSON Schema draft 2020-12 and carry an explicit `s
 | `benchmark-record.schema.json` | Family-safe dataset case, runner, metric, and artifact record |
 | `dataset-manifest.schema.json` | Family provenance, split, ground-truth, and degradation case contract |
 | `e2-g1-report.schema.json` | Binary gate metrics, ablations, baseline comparison, and verdict |
+| `multicolor-g2-report.schema.json` | Multicolor topology, fidelity, seam, node, and renderer evidence |
+| `stroke-g3-report.schema.json` | Stroke routing, centerline, width, style, cut-outline, and gate verdict |
 
 `fixtures/valid` must be accepted and `fixtures/invalid` must be rejected by the schema test suite.
 

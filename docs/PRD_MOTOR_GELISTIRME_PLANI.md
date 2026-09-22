@@ -1159,7 +1159,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [ ] **ADR-009:** PDF backend ve fiziksel ölçü.
 - [ ] **ADR-010:** Confidence kalibrasyonu ve UI sunumu.
 - [x] **ADR-011:** Koordinat normalizasyonu, epsilon ve SVG quantization — `docs/adr/ADR-011-coordinate-epsilon-serialization.md`.
-- [ ] **ADR-012:** Fill/stroke arbitration.
+- [x] **ADR-012:** Fill/stroke arbitration — `docs/adr/ADR-012-fill-stroke-arbitration.md`.
 - [ ] **ADR-013:** Cut-ready minimum geometri toleransları.
 - [ ] **ADR-014:** Artifact storage, veri retention ve silme.
 - [ ] **ADR-015:** Lokal reprocess graph invalidation sınırı.
@@ -1356,33 +1356,35 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ## E4 — Stroke ve line-art — 18–22 gün
 
-- [ ] **STR-001 — Fill/stroke routing dataset ve classifier v1** — P1, 3 gün, bağımlılık: G2
+**Durum:** STR-001…STR-008 tamamlandı. 13-vakalık locked G3 corpusu routing accuracy `%92.31`, stroke connectivity `%100`, junction valence `%100`, style renderer-equivalence `%100`, fidelity-band pass `%100`, cut-outline validation `%100`, centerline p95 `0.5 px`, ortalama width error `0.337 px` ve fill dalına karşı node avantajı `%54.95` ile geçti. Semantic digest `329d630a7bf009abb5b27fc30fa1224304b5508bccd4d3ca54b62caa42ecfb2d` iki bağımsız koşuda tekrarlandı.
+
+- [x] **STR-001 — Fill/stroke routing dataset ve classifier v1** — P1, 3 gün, bağımlılık: G2
   - **Kabul:** Confusion matrix ve düşük güven fallback kuralı vardır.
 
-- [ ] **STR-002 — Skeleton/centerline graph** — P1, 4 gün, bağımlılık: STR-001
+- [x] **STR-002 — Skeleton/centerline graph** — P1, 4 gün, bağımlılık: STR-001
   - **Kabul:** Sentetik line-art centerline distance/connectivity ölçülür.
 
-- [ ] **STR-003 — Width profile ve constant/variable model** — P1, 3 gün, bağımlılık: STR-002
+- [x] **STR-003 — Width profile ve constant/variable model** — P1, 3 gün, bağımlılık: STR-002
   - **Kabul:** Width error ve complexity karşılaştırması raporlanır.
 
-- [ ] **STR-004 — Cap/join adayları** — P1, 2 gün, bağımlılık: STR-003
+- [x] **STR-004 — Cap/join adayları** — P1, 2 gün, bağımlılık: STR-003
   - **Kabul:** Butt/round/square ve miter/round/bevel golden’ları geçer.
 
-- [ ] **STR-005 — T/X junction çözümü ve spur temizliği** — P1, 3 gün, bağımlılık: STR-004
+- [x] **STR-005 — T/X junction çözümü ve spur temizliği** — P1, 3 gün, bağımlılık: STR-004
   - **Kabul:** Junction valence/connectivity ground truth ile eşleşir.
 
-- [ ] **STR-006 — Fill/stroke arbitration** — P1, 3 gün, bağımlılık: STR-005, ADR-012
+- [x] **STR-006 — Fill/stroke arbitration** — P1, 3 gün, bağımlılık: STR-005, ADR-012
   - **Kabul:** Her iki hipotez render/topology/complexity ile karşılaştırılır; düşük güven `needs_review` olur.
 
-- [ ] **STR-007 — Stroke SVG ve cut-outline export** — P1, 2 gün, bağımlılık: STR-006
+- [x] **STR-007 — Stroke SVG ve cut-outline export** — P1, 2 gün, bağımlılık: STR-006
   - **Kabul:** Stroke ve outline render’ları tolerans içinde; cut validator geçer.
 
-- [ ] **STR-008 — Stroke locked gate** — P1, 1 gün, bağımlılık: STR-007
+- [x] **STR-008 — Stroke locked gate** — P1, 1 gün, bağımlılık: STR-007
   - **Kabul:** Kopukluk, yanlış birleşme, width ve node avantajı raporlanır.
 
 ### Gate G3 — Stroke devam kararı
 
-Stroke dalı fill’den anlamlı fidelity/editability kazancı sağlamıyorsa pilot MVP’den çıkarılır; line-art kapsam iddiası daraltılır.
+**Durum:** Geçildi. `out/stroke-g3-final/g3-report.json` ve `out/stroke-g3-final-repeat/g3-report.json` schema-valid ve deterministiktir. Stroke dalı aynı fidelity bandında fill’e karşı `%54.95` node avantajı gösterdi; topology/connectivity, T/X valence, cap/join renderer-equivalence, width ve cut-outline hard kriterlerinin tamamı geçti. Stroke dalı pilot MVP’de tutulur.
 
 ## E5 — Global optimizer ve render-and-rank — 15–20 gün
 

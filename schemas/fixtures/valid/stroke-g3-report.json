@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "procedural-e4-stroke-v1",
+  "semantic_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "confusion_matrix": {"stroke": {"stroke": 1}},
+  "evaluation": {
+    "passed": true,
+    "routing_accuracy": 1.0,
+    "connectivity_accuracy": 1.0,
+    "junction_accuracy": 1.0,
+    "maximum_centerline_p95": 0.5,
+    "mean_width_error": 0.25,
+    "style_accuracy": 1.0,
+    "fidelity_band_rate": 1.0,
+    "node_advantage_vs_fill": 0.5,
+    "cut_outline_rate": 1.0,
+    "hard_failure_count": 0,
+    "criteria": {"no_hard_failures": true}
+  },
+  "measurements": [
+    {
+      "case_id": "stroke-line-butt",
+      "status": "success",
+      "route_expected": "stroke",
+      "route_actual": "stroke",
+      "route_correct": true,
+      "connectivity_exact": true,
+      "junction_exact": true,
+      "centerline_p95": 0.5,
+      "width_error": 0.0,
+      "width_model": "constant",
+      "cap_exact": true,
+      "join_exact": null,
+      "stroke_rmse": 0.01,
+      "fill_rmse": 0.01,
+      "stroke_nodes": 2,
+      "fill_nodes": 4,
+      "selected_kind": "stroke",
+      "cut_outline_valid": true,
+      "message": ""
+    }
+  ]
+}

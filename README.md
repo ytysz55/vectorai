@@ -6,7 +6,7 @@ Deterministic, topology-first raster-to-vector reconstruction for logos, icons, 
 
 ## Status
 
-**E0 — foundation, E1 — benchmark harness, and E2 — binary vertical slice are complete.** Gates G0 and G1 have passed; the next implementation phase is **E3 — mandatory multicolor reconstruction and demo web**. The implementation order is deliberately gated:
+**E0 foundation, E1 benchmark harness, E2 binary, E3 multicolor/demo, and E4 stroke/line-art are complete.** Gates G0–G3 have passed; the next implementation phase is **E5 — global optimization**. The implementation order is deliberately gated:
 
 1. benchmark harness,
 2. binary vertical slice,
@@ -98,6 +98,19 @@ uv run python tools/benchmark/run_e2_gate.py \
 ```
 
 The current 20-case procedural binary gate records 100% exact topology, zero hard failures, and a 73.21% node advantage over VTracer while remaining in an equal-or-better fidelity band.
+
+## Run Gate G3
+
+The stroke gate exercises fill/stroke routing, topology-preserving centerlines, width models, caps/joins, T/X junctions, cut outlines, and fill-vs-stroke Pareto selection.
+
+```bash
+uv run python tools/benchmark/run_stroke_g3.py \
+  --resvg /path/to/resvg \
+  --output out/stroke-g3 \
+  --verify-repeat
+```
+
+The locked 13-case G3 corpus records 92.31% routing accuracy, exact connectivity and junction valence, 0.5 px centerline p95, 0.337 px mean width error, 100% style/cut validation, and 54.95% node advantage over fill. The local web demo exposes this branch as **Stroke / line-art** and provides both editable stroke SVG and closed cut-outline SVG.
 
 ## Current dependency policy
 

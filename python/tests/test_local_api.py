@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -41,6 +41,14 @@ def image_bytes() -> bytes:
         color = (220, 30, 30) if x < 12 else (30, 60, 220)
         for y in range(12):
             image.putpixel((x, y), color)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def stroke_image_bytes() -> bytes:
+    image = Image.new("RGBA", (96, 48), (0, 0, 0, 0))
+    ImageDraw.Draw(image).line((12, 24, 84, 24), fill=(17, 24, 39, 255), width=7)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return buffer.getvalue()
@@ -125,12 +133,42 @@ def test_loopback_api_vectorizes_and_serves_confined_artifacts(tmp_path: Path) -
         assert status == 200
         payload = json.loads(body)
         assert payload["status"] == "success"
+        assert payload["mode"] == "geometric"
         assert payload["palette_count"] == 2
         assert payload["region_count"] == 2
         svg_status, svg, headers = request(f"{base_url}{payload['artifacts']['output.svg']}")
         assert svg_status == 200
         assert headers["content-type"].startswith("image/svg+xml")
         assert b"<svg" in svg
+        stroke_status, stroke_body, _ = request(
+            f"{base_url}/v1/vectorize",
+            body=stroke_image_bytes(),
+            headers={
+                "content-type": "image/png",
+                "x-vectorai-filename": "line.png",
+                "x-vectorai-mode": "stroke",
+            },
+        )
+        assert stroke_status == 200
+        stroke_payload = json.loads(stroke_body)
+        assert stroke_payload["mode"] == "stroke"
+        assert stroke_payload["palette_count"] == 1
+        assert "cut-outline.svg" in stroke_payload["artifacts"]
+        cut_status, cut_svg, _ = request(
+            f"{base_url}{stroke_payload['artifacts']['cut-outline.svg']}"
+        )
+        assert cut_status == 200
+        assert b"<svg" in cut_svg
+        invalid_mode_status, _, _ = request(
+            f"{base_url}/v1/vectorize",
+            body=image_bytes(),
+            headers={
+                "content-type": "image/png",
+                "x-vectorai-filename": "logo.png",
+                "x-vectorai-mode": "photographic",
+            },
+        )
+        assert invalid_mode_status == 400
         escaped_status, _, _ = request(f"{base_url}/v1/jobs/not-a-job/artifacts/../input.png")
         assert escaped_status == 404
         oversized_status, _, _ = request(
