@@ -10,24 +10,25 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from PIL import Image, ImageDraw
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def fake_resvg(path: Path) -> Path:
     path.write_text(
-        """
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + """
 import sys
 from pathlib import Path
-from PIL import Image
 
 if '--version' in sys.argv:
     print('fake-resvg 1.0')
     raise SystemExit(0)
 width = int(sys.argv[sys.argv.index('--width') + 1])
 height = int(sys.argv[sys.argv.index('--height') + 1])
-Image.new('RGBA', (width, height), (0, 0, 0, 255)).save(Path(sys.argv[-1]))
+write_rgba_png(Path(sys.argv[-1]), width, height, (0, 0, 0, 255))
 """.strip()
         + "\n",
         encoding="utf-8",

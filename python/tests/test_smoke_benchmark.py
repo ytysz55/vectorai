@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_bench.baselines import (
     PotraceAdapter,
@@ -46,22 +46,27 @@ output.write_text(
 
 def write_fake_resvg(path: Path) -> tuple[str, ...]:
     path.write_text(
-        """
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + """
 import sys
 from pathlib import Path
-from PIL import Image, ImageDraw
 if '--version' in sys.argv:
     print('0.47.0')
     raise SystemExit(0)
 width = int(sys.argv[sys.argv.index('--width') + 1])
 height = int(sys.argv[sys.argv.index('--height') + 1])
 output = Path(sys.argv[-1])
-scale = width / 128
-image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-draw = ImageDraw.Draw(image)
-draw.ellipse(tuple(int(v * scale) for v in (8, 8, 120, 120)), fill='#7c3aed')
-draw.ellipse(tuple(int(v * scale) for v in (36, 36, 92, 92)), fill=(0, 0, 0, 0))
-image.save(output)
+pixels = bytearray(width * height * 4)
+for y in range(height):
+    source_y = (y + 0.5) * 128.0 / height - 64.0
+    for x in range(width):
+        source_x = (x + 0.5) * 128.0 / width - 64.0
+        radius_squared = source_x * source_x + source_y * source_y
+        if 28.0 * 28.0 < radius_squared <= 56.0 * 56.0:
+            offset = (y * width + x) * 4
+            pixels[offset:offset + 4] = bytes((124, 58, 237, 255))
+write_rgba_pixels(output, width, height, pixels)
 """.strip()
         + "\n",
         encoding="utf-8",

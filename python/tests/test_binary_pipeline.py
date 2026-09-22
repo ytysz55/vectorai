@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 from PIL import Image, ImageDraw
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_cli.__main__ import main
 from vectorai_engine import BinaryPipelineConfig, RunStatus, run_binary_pipeline
@@ -62,10 +62,11 @@ value('--report').write_text(json.dumps(report, sort_keys=True) + '\\n', encodin
 
 def write_fake_renderer(path: Path) -> tuple[str, ...]:
     path.write_text(
-        """
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + """
 import sys
 from pathlib import Path
-from PIL import Image
 
 if '--version' in sys.argv:
     print('fake-1.0')
@@ -88,7 +89,7 @@ for argument in sys.argv:
     elif argument.startswith('--screenshot='):
         output = Path(argument.split('=', 1)[1])
 assert output is not None
-Image.new('RGBA', (width, height), (0, 0, 0, 0)).save(output)
+write_rgba_png(output, width, height, (0, 0, 0, 0))
 """.strip()
         + "\n",
         encoding="utf-8",

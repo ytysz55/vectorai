@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_bench.external_tools import ToolStatus
 from vectorai_bench.renderers import ResvgAdapter
@@ -16,10 +16,11 @@ from vectorai_bench.svg_validation import (
 
 def write_fake_renderer(path: Path, *, color: tuple[int, int, int, int]) -> tuple[str, ...]:
     path.write_text(
-        f"""
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + f"""
 import sys
 from pathlib import Path
-from PIL import Image
 
 if '--version' in sys.argv:
     print('fake-1.0')
@@ -43,7 +44,7 @@ for argument in sys.argv:
     elif argument.startswith('--screenshot='):
         output = Path(argument.split('=', 1)[1])
 assert output is not None
-Image.new('RGBA', (width, height), {color!r}).save(output)
+write_rgba_png(output, width, height, {color!r})
 """.strip()
         + "\n",
         encoding="utf-8",

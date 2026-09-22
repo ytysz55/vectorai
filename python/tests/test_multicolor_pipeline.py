@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from PIL import Image
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_bench.fixtures import generate_fixture_set
 from vectorai_engine import RunStatus
@@ -16,10 +16,11 @@ from vectorai_engine.multicolor_pipeline import (
 
 def fake_resvg(path: Path) -> tuple[str, ...]:
     path.write_text(
-        """
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + """
 import sys
 from pathlib import Path
-from PIL import Image
 
 if '--version' in sys.argv:
     print('fake-resvg 1.0')
@@ -39,7 +40,7 @@ else:
     output_arg = next(arg for arg in sys.argv if arg.startswith('--screenshot='))
     width, height = map(int, size_arg.split('=', 1)[1].split(','))
     output = Path(output_arg.split('=', 1)[1])
-Image.new('RGBA', (width, height), (20, 30, 40, 255)).save(output)
+write_rgba_png(output, width, height, (20, 30, 40, 255))
 """.strip()
         + "\n",
         encoding="utf-8",

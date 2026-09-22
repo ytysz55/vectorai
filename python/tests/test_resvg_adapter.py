@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PIL import Image
-from python.tests._support import active_python_executable
+from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_bench.external_tools import ToolStatus, file_sha256
 from vectorai_bench.renderers import ResvgAdapter, load_resvg_release
@@ -13,11 +13,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def write_fake_resvg(path: Path) -> tuple[str, ...]:
     path.write_text(
-        """
+        RGBA_PNG_WRITER_SOURCE
+        + "\n\n"
+        + """
 import sys
 import time
 from pathlib import Path
-from PIL import Image
 
 if '--version' in sys.argv:
     print('0.47.0')
@@ -31,7 +32,7 @@ if 'invalid' in svg.name:
     raise SystemExit(0)
 width = int(sys.argv[sys.argv.index('--width') + 1])
 height = int(sys.argv[sys.argv.index('--height') + 1])
-Image.new('RGBA', (width, height), (10, 20, 30, 255)).save(output)
+write_rgba_png(output, width, height, (10, 20, 30, 255))
 """.strip()
         + "\n",
         encoding="utf-8",
