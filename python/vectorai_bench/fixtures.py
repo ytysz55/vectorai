@@ -229,7 +229,7 @@ def fixture_definitions() -> tuple[FixtureDefinition, ...]:
                 'd="M158 178A20 20 0 1 1 157.999 178Z M158 188A10 10 0 1 0 158.001 188Z"/>'
                 "</g>"
             ),
-            topology=TopologyTruth(components=3, holes=1),
+            topology=TopologyTruth(components=4, holes=1),
             geometry=GeometryTruth(primitive_types=("rect", "ellipse", "rect", "ring")),
             draw=_draw_text_like,
         ),

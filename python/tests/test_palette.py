@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import io
+from pathlib import Path
 
 import numpy as np
 import pytest
 from PIL import Image
 
+from vectorai_bench.fixtures import generate_fixture_set
 from vectorai_engine.decode import decode_bytes
 from vectorai_engine.errors import EngineFailure
 from vectorai_engine.normalize import normalize_source
@@ -69,6 +71,27 @@ def test_transparent_pixels_do_not_create_palette_entries() -> None:
     assert result.selected.color_count == 2
     assert result.active_pixel_count == 199
     assert int(result.selected.labels[0, 0]) == -1
+
+
+def test_antialiased_transparent_fixtures_use_design_colors_only(tmp_path: Path) -> None:
+    manifest = generate_fixture_set(tmp_path)
+    expected = {
+        "synthetic-circle-001": 1,
+        "synthetic-ring-001": 1,
+        "synthetic-text-like-001": 1,
+        "synthetic-junction-001": 3,
+        "synthetic-nested-001": 3,
+        "synthetic-shared-edge-001": 2,
+    }
+    for case in manifest.cases:
+        color_count = expected.get(case.family_id)
+        if color_count is None or case.raster_asset is None:
+            continue
+        payload = (tmp_path / case.raster_asset.artifact_ref).read_bytes()
+        source = normalize_source(decode_bytes(payload))
+        result = generate_palette_hypotheses(source, analyze_reliability(source))
+        assert result.selected.color_count == color_count
+        assert int(np.count_nonzero(result.selected.labels >= 0)) == result.active_pixel_count
 
 
 def test_invalid_palette_bounds_are_typed() -> None:

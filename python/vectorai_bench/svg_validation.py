@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import re
 import shutil
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -204,6 +206,55 @@ class ChromiumAdapter(_AuxiliaryRenderer):
     def default_commands(self) -> tuple[str, ...]:
         return ("chromium", "chromium-browser", "google-chrome", "chrome")
 
+    def probe(self) -> ProbeResult:
+        if os.name != "nt" or self._command is None:
+            return super().probe()
+        if self._probe is not None:
+            return self._probe
+        executable = Path(self._command[0])
+        try:
+            versions = sorted(
+                (
+                    child.name
+                    for child in executable.parent.iterdir()
+                    if child.is_dir() and re.fullmatch(r"\d+(?:\.\d+){3}", child.name)
+                ),
+                key=lambda value: tuple(int(part) for part in value.split(".")),
+            )
+        except OSError:
+            versions = []
+        if not versions:
+            return super().probe()
+        version = f"Chromium {versions[-1]}"
+        identity = ToolIdentity(
+            name=self.name,
+            executable=str(executable),
+            version=version,
+            executable_sha256=file_sha256(executable),
+        )
+        if self._expected_version is not None and version != self._expected_version:
+            self._probe = ProbeResult(
+                ToolStatus.VERSION_MISMATCH,
+                identity=identity,
+                message=f"expected {self._expected_version!r}, got {version!r}",
+            )
+        else:
+            self._probe = ProbeResult(ToolStatus.READY, identity=identity)
+        return self._probe
+
+    def render(
+        self,
+        svg_path: Path,
+        output_path: Path,
+        *,
+        width: int,
+        height: int,
+    ) -> RenderResult:
+        try:
+            return super().render(svg_path, output_path, width=width, height=height)
+        finally:
+            shutil.rmtree(output_path.parent / ".chromium-profile", ignore_errors=True)
+
     def render_arguments(
         self, svg_path: Path, output_path: Path, width: int, height: int
     ) -> tuple[str, ...]:
@@ -211,6 +262,13 @@ class ChromiumAdapter(_AuxiliaryRenderer):
             "--headless=new",
             "--disable-gpu",
             "--hide-scrollbars",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--disable-background-networking",
+            "--disable-component-update",
+            "--disable-sync",
+            "--run-all-compositor-stages-before-draw",
+            f"--user-data-dir={(output_path.parent / '.chromium-profile').resolve()}",
             f"--screenshot={output_path.resolve()}",
             f"--window-size={width},{height}",
             svg_path.resolve().as_uri(),

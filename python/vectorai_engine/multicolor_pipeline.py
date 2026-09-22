@@ -11,7 +11,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from vectorai_bench.external_tools import ToolStatus
+from vectorai_bench.metrics.topology import analyze_binary_mask
 from vectorai_bench.renderers import ResvgAdapter
+from vectorai_bench.svg_validation import ChromiumAdapter, InkscapeAdapter
 
 from .decode import DecodeLimits, decode_path
 from .errors import EngineError, EngineFailure, ErrorCode, RunStatus, Stage
@@ -29,6 +31,9 @@ from .shared_boundary import assemble_shared_boundaries, measure_renderer_seams
 class MulticolorPipelineConfig:
     resvg_executable: Path | None = None
     resvg_command_prefix: tuple[str, ...] | None = None
+    inkscape_command_prefix: tuple[str, ...] | None = None
+    chromium_command_prefix: tuple[str, ...] | None = None
+    require_auxiliary_renderers: bool = False
     palette: PaletteConfig = field(default_factory=PaletteConfig)
     segmentation: SpatialSegmentationConfig = field(default_factory=SpatialSegmentationConfig)
     decode_limits: DecodeLimits = field(default_factory=DecodeLimits)
@@ -94,6 +99,14 @@ def run_multicolor_pipeline(
             Stage.VALIDATION,
             f"resvg executable not found: {config.resvg_executable}",
         )
+    if config.require_auxiliary_renderers and (
+        config.inkscape_command_prefix is None or config.chromium_command_prefix is None
+    ):
+        raise _failure(
+            ErrorCode.UNSUPPORTED_INPUT,
+            Stage.VALIDATION,
+            "required Inkscape and Chromium commands were not configured",
+        )
     if output_directory.exists():
         raise _failure(
             ErrorCode.EXPORT_FAILED,
@@ -152,6 +165,7 @@ def run_multicolor_pipeline(
         _, scene_manifest = export_multicolor_svg(scene, palette, svg_path)
         durations["export"] = (time.perf_counter() - export_started) * 1000.0
         scene_path = temporary / "scene.json"
+        foreground_topology = analyze_binary_mask(palette.selected.labels >= 0)
         _write_json(
             scene_path,
             {
@@ -174,6 +188,8 @@ def run_multicolor_pipeline(
                 },
                 "graph": {
                     "face_count": len(graph.faces) - 1,
+                    "hole_count": foreground_topology.holes,
+                    "foreground_component_count": foreground_topology.components,
                     "adjacency": sorted(graph.adjacency),
                     "canonical_edge_count": graph.canonical_edge_count,
                 },
@@ -202,7 +218,52 @@ def run_multicolor_pipeline(
                 Stage.VALIDATION,
                 rendered.message or f"resvg status: {rendered.status}",
             )
-        seam_matrix = measure_renderer_seams(assembly, {"resvg": preview_path})
+        renderer_outputs = {"resvg": preview_path}
+        auxiliary_results: list[dict[str, object]] = []
+        auxiliary_artifacts: list[Path] = []
+        auxiliary_adapters = (
+            (
+                "inkscape",
+                InkscapeAdapter(command_prefix=config.inkscape_command_prefix)
+                if config.inkscape_command_prefix is not None
+                else None,
+            ),
+            (
+                "chromium",
+                ChromiumAdapter(command_prefix=config.chromium_command_prefix)
+                if config.chromium_command_prefix is not None
+                else None,
+            ),
+        )
+        for renderer_name, adapter in auxiliary_adapters:
+            if adapter is None:
+                continue
+            renderer_path = temporary / f"preview-{renderer_name}.png"
+            auxiliary = adapter.render(
+                svg_path,
+                renderer_path,
+                width=source.width,
+                height=source.height,
+            )
+            auxiliary_results.append(
+                {
+                    "name": renderer_name,
+                    "status": auxiliary.status.value,
+                    "version": auxiliary.identity.version if auxiliary.identity else "unknown",
+                    "output_sha256": auxiliary.output_sha256,
+                    "message": auxiliary.message,
+                }
+            )
+            if auxiliary.status is ToolStatus.SUCCESS:
+                renderer_outputs[renderer_name] = renderer_path
+                auxiliary_artifacts.append(renderer_path)
+            elif config.require_auxiliary_renderers:
+                raise _failure(
+                    ErrorCode.VALIDATION_FAILED,
+                    Stage.VALIDATION,
+                    auxiliary.message or f"{renderer_name} status: {auxiliary.status}",
+                )
+        seam_matrix = measure_renderer_seams(assembly, renderer_outputs)
         durations["validation"] = (time.perf_counter() - validation_started) * 1000.0
         gap_rate = max(
             (item.transparent_gap_rate for item in seam_matrix.observations),
@@ -234,6 +295,7 @@ def run_multicolor_pipeline(
                     "version": rendered.identity.version if rendered.identity else "unknown",
                     "output_sha256": rendered.output_sha256,
                 },
+                "auxiliary_renderers": auxiliary_results,
                 "seams": asdict(seam_matrix),
                 "warnings": list(normalized.warnings),
                 "final_status": final_status.value,
@@ -241,6 +303,7 @@ def run_multicolor_pipeline(
                     _artifact(svg_path, temporary, "image/svg+xml"),
                     _artifact(preview_path, temporary, "image/png"),
                     _artifact(scene_path, temporary, "application/json"),
+                    *(_artifact(path, temporary, "image/png") for path in auxiliary_artifacts),
                 ],
                 "total_duration_ms": (time.perf_counter() - started) * 1000.0,
             },

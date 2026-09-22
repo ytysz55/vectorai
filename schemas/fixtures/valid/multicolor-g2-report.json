@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "procedural-e3-multicolor-v2",
+  "semantic_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "evaluation": {
+    "passed": true,
+    "exact_topology_rate": 1.0,
+    "representative_topology_rate": 1.0,
+    "turkish_topology_rate": 1.0,
+    "maximum_seam_gap_rate": 0.0,
+    "node_advantage_vs_vtracer": 0.2,
+    "representative_node_advantage_vs_vtracer": 0.1,
+    "fidelity_band_comparisons": 17,
+    "representative_fidelity_band_comparisons": 6,
+    "criteria": {
+      "topology_at_least_95_percent": true,
+      "representative_topology_exact": true,
+      "turkish_critical_topology_exact": true,
+      "renderer_seams_have_no_transparent_gap": true,
+      "vtracer_fidelity_band_comparison": true,
+      "representative_fidelity_band_comparison": true,
+      "vtracer_node_advantage_nonnegative": true,
+      "representative_node_advantage_nonnegative": true
+    }
+  },
+  "measurements": [
+    {
+      "case_id": "representative-synthetic-ring-001",
+      "runner": "engine",
+      "status": "success",
+      "exact_topology": true,
+      "premultiplied_rgba_rmse": 0.01,
+      "node_count": 8,
+      "seam_gap_rate": 0.0,
+      "message": "",
+      "subset": "icon"
+    }
+  ]
+}

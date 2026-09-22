@@ -15,17 +15,25 @@
       "required": [
         "passed",
         "exact_topology_rate",
+        "representative_topology_rate",
+        "turkish_topology_rate",
         "maximum_seam_gap_rate",
         "node_advantage_vs_vtracer",
+        "representative_node_advantage_vs_vtracer",
         "fidelity_band_comparisons",
+        "representative_fidelity_band_comparisons",
         "criteria"
       ],
       "properties": {
         "passed": {"type": "boolean"},
         "exact_topology_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "representative_topology_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "turkish_topology_rate": {"type": "number", "minimum": 0, "maximum": 1},
         "maximum_seam_gap_rate": {"type": "number", "minimum": 0, "maximum": 1},
         "node_advantage_vs_vtracer": {"type": ["number", "null"]},
+        "representative_node_advantage_vs_vtracer": {"type": ["number", "null"]},
         "fidelity_band_comparisons": {"type": "integer", "minimum": 0},
+        "representative_fidelity_band_comparisons": {"type": "integer", "minimum": 0},
         "criteria": {"type": "object", "additionalProperties": {"type": "boolean"}}
       }
     },
@@ -37,7 +45,7 @@
         "additionalProperties": false,
         "required": [
           "case_id", "runner", "status", "exact_topology", "premultiplied_rgba_rmse",
-          "node_count", "seam_gap_rate", "message"
+          "node_count", "seam_gap_rate", "message", "subset"
         ],
         "properties": {
           "case_id": {"type": "string", "minLength": 1},
@@ -47,7 +55,35 @@
           "premultiplied_rgba_rmse": {"type": ["number", "null"]},
           "node_count": {"type": ["integer", "null"], "minimum": 0},
           "seam_gap_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-          "message": {"type": "string"}
+          "message": {"type": "string"},
+          "subset": {"enum": ["palette_stripes", "logo", "icon", "turkish_text"]}
+        }
+      }
+    },
+    "renderer_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "observations", "maximum_renderer_channel_delta"],
+        "properties": {
+          "case_id": {"type": "string", "minLength": 1},
+          "observations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["renderer", "sample_count", "transparent_gap_rate", "minimum_alpha"],
+              "properties": {
+                "renderer": {"type": "string", "minLength": 1},
+                "sample_count": {"type": "integer", "minimum": 0},
+                "transparent_gap_rate": {"type": "number", "minimum": 0, "maximum": 1},
+                "minimum_alpha": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            }
+          },
+          "maximum_renderer_channel_delta": {"type": "number", "minimum": 0, "maximum": 1}
         }
       }
     }

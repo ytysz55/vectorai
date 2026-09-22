@@ -47,6 +47,15 @@ def test_reference_rasters_are_rgba_and_sized(tmp_path: Path) -> None:
             assert image.size == (CANVAS_SIZE, CANVAS_SIZE)
 
 
+def test_turkish_text_truth_counts_disconnected_diacritic_and_ring(tmp_path: Path) -> None:
+    manifest = generate_fixture_set(tmp_path)
+    family = next(
+        family for family in manifest.families if family.family_id == "synthetic-text-like-001"
+    )
+    assert family.ground_truth.topology.components == 4
+    assert family.ground_truth.topology.holes == 1
+
+
 def test_shared_edge_truth_is_canonical(tmp_path: Path) -> None:
     manifest = generate_fixture_set(tmp_path)
     family = next(

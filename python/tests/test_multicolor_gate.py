@@ -15,8 +15,36 @@ def measurements(case_count: int, *, seam_gap: float = 0.0) -> list[MulticolorMe
     result: list[MulticolorMeasurement] = []
     for index in range(case_count):
         case_id = f"case-{index}"
-        result.append(MulticolorMeasurement(case_id, "engine", "success", True, 0.01, 8, seam_gap))
-        result.append(MulticolorMeasurement(case_id, "vtracer", "success", None, 0.02, 12, None))
+        if index == case_count - 1:
+            subset = "turkish_text"
+        elif index == 0:
+            subset = "icon"
+        else:
+            subset = "palette_stripes"
+        result.append(
+            MulticolorMeasurement(
+                case_id,
+                "engine",
+                "success",
+                True,
+                0.01,
+                8,
+                seam_gap,
+                subset=subset,
+            )
+        )
+        result.append(
+            MulticolorMeasurement(
+                case_id,
+                "vtracer",
+                "success",
+                None,
+                0.02,
+                12,
+                None,
+                subset=subset,
+            )
+        )
     return result
 
 
@@ -47,6 +75,8 @@ def test_g2_evaluation_fails_with_negative_node_advantage() -> None:
                 item.premultiplied_rgba_rmse,
                 16,
                 item.seam_gap_rate,
+                item.message,
+                item.subset,
             )
     evaluation = evaluate_multicolor_g2(cases, case_count=10)
     assert not evaluation.passed
@@ -57,9 +87,14 @@ def test_g2_evaluation_fails_with_negative_node_advantage() -> None:
 
 def test_multicolor_corpus_covers_two_through_twelve_colors(tmp_path: Path) -> None:
     cases = generate_multicolor_cases(tmp_path)
-    assert [case.palette_count for case in cases] == list(range(2, 13))
-    assert [case.region_count for case in cases] == list(range(2, 13))
-    assert [case.adjacency_count for case in cases] == list(range(1, 12))
+    stripes = [case for case in cases if case.subset == "palette_stripes"]
+    representatives = [case for case in cases if case.subset != "palette_stripes"]
+    assert [case.palette_count for case in stripes] == list(range(2, 13))
+    assert [case.region_count for case in stripes] == list(range(2, 13))
+    assert [case.adjacency_count for case in stripes] == list(range(1, 12))
+    assert {case.subset for case in representatives} == {"logo", "icon", "turkish_text"}
+    assert len(representatives) == 6
+    assert sum(case.subset == "turkish_text" for case in representatives) == 1
     for case in cases:
         with Image.open(case.source_path) as image:
-            assert image.size == (case.palette_count * 12, 48)
+            assert image.size == (case.width, case.height)

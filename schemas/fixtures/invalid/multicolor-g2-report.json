@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "procedural-e3-multicolor-v2",
+  "semantic_digest": "not-a-digest",
+  "evaluation": {
+    "passed": true,
+    "exact_topology_rate": 2.0,
+    "representative_topology_rate": 1.0,
+    "turkish_topology_rate": 1.0,
+    "maximum_seam_gap_rate": 0.0,
+    "node_advantage_vs_vtracer": 0.2,
+    "representative_node_advantage_vs_vtracer": 0.1,
+    "fidelity_band_comparisons": 1,
+    "representative_fidelity_band_comparisons": 1,
+    "criteria": {}
+  },
+  "measurements": [
+    {
+      "case_id": "bad",
+      "runner": "engine",
+      "status": "success",
+      "exact_topology": true,
+      "premultiplied_rgba_rmse": 0.0,
+      "node_count": 1,
+      "seam_gap_rate": 0.0,
+      "message": "",
+      "subset": "photograph"
+    }
+  ]
+}

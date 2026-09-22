@@ -21,6 +21,9 @@ class PaletteConfig:
     convergence_epsilon: float = 1.0e-7
     minimum_active_alpha: float = 0.05
     minimum_cluster_weight: float = 1.0e-4
+    stable_core_radius: int = 2
+    stable_core_color_delta: float = 2.5 / 255.0
+    minimum_stable_core_fraction: float = 0.1
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +87,19 @@ def _argmax(values: NDArray[np.float64], context: str) -> int:
         ) from error
 
 
+def _count_true(values: NDArray[np.bool_], context: str) -> int:
+    try:
+        return int(np.count_nonzero(values))
+    except (TypeError, ValueError, OverflowError) as error:
+        raise EngineFailure(
+            EngineError(
+                ErrorCode.INTERNAL_INVARIANT_VIOLATION,
+                Stage.PALETTE,
+                f"cannot count {context}: {error}",
+            )
+        ) from error
+
+
 def _validate_config(config: PaletteConfig) -> None:
     if (
         config.minimum_colors < 1
@@ -93,6 +109,9 @@ def _validate_config(config: PaletteConfig) -> None:
         or config.convergence_epsilon <= 0.0
         or not 0.0 <= config.minimum_active_alpha <= 1.0
         or config.minimum_cluster_weight <= 0.0
+        or config.stable_core_radius < 0
+        or not 0.0 <= config.stable_core_color_delta <= 1.0
+        or not 0.0 <= config.minimum_stable_core_fraction <= 1.0
     ):
         raise EngineFailure(
             EngineError(
@@ -103,11 +122,52 @@ def _validate_config(config: PaletteConfig) -> None:
         )
 
 
+def _stable_color_core(
+    image: NormalizedImage,
+    active: NDArray[np.bool_],
+    *,
+    has_transparency: bool,
+    config: PaletteConfig,
+) -> NDArray[np.bool_]:
+    radius = config.stable_core_radius
+    if radius == 0:
+        return active
+    rgb = image.rgba_srgb[..., :3].astype(np.float64, copy=False)
+    alpha = image.rgba_srgb[..., 3].astype(np.float64, copy=False)
+    stable = (alpha >= 1.0 - 1.0e-6) if has_transparency else active.copy()
+    padded_rgb = np.pad(rgb, ((radius, radius), (radius, radius), (0, 0)), mode="edge")
+    padded_stable = np.pad(stable, radius, mode="constant", constant_values=False)
+    diameter = 2 * radius + 1
+    for offset_y in range(diameter):
+        for offset_x in range(diameter):
+            neighbor_rgb = padded_rgb[
+                offset_y : offset_y + image.height,
+                offset_x : offset_x + image.width,
+            ]
+            neighbor_stable = padded_stable[
+                offset_y : offset_y + image.height,
+                offset_x : offset_x + image.width,
+            ]
+            stable &= neighbor_stable
+            stable &= np.max(np.abs(neighbor_rgb - rgb), axis=2) <= config.stable_core_color_delta
+    minimum_count = max(
+        64,
+        math.ceil(config.minimum_stable_core_fraction * _count_true(active, "active pixels")),
+    )
+    return stable if _count_true(stable, "stable palette pixels") >= minimum_count else active
+
+
 def _active_samples(
     image: NormalizedImage,
     reliability: ReliabilityMap | None,
     config: PaletteConfig,
-) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.bool_]]:
+) -> tuple[
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.float64],
+    NDArray[np.bool_],
+    NDArray[np.float64],
+]:
     alpha = image.rgba_srgb[..., 3].astype(np.float64, copy=False)
     has_transparency = bool(np.any(alpha < 1.0 - 1.0e-6))
     active = alpha >= config.minimum_active_alpha if has_transparency else np.ones_like(alpha, bool)
@@ -119,9 +179,16 @@ def _active_samples(
                 "image has no active pixels for palette estimation",
             )
         )
-    lab = image.oklab.astype(np.float64, copy=False)[active]
-    rgb = image.rgba_srgb[..., :3].astype(np.float64, copy=False)[active]
-    weights = np.maximum(alpha[active], 1.0e-6)
+    sample_mask = _stable_color_core(
+        image,
+        active,
+        has_transparency=has_transparency,
+        config=config,
+    )
+    full_lab = image.oklab.astype(np.float64, copy=False)
+    lab = full_lab[sample_mask]
+    rgb = image.rgba_srgb[..., :3].astype(np.float64, copy=False)[sample_mask]
+    weights = np.maximum(alpha[sample_mask], 1.0e-6)
     if reliability is not None:
         if reliability.confidence.shape != alpha.shape:
             raise EngineFailure(
@@ -131,27 +198,37 @@ def _active_samples(
                     "reliability dimensions do not match normalized image",
                 )
             )
-        weights *= 0.1 + 0.9 * reliability.confidence.astype(np.float64, copy=False)[active]
-    return lab, rgb, weights, active
+        weights *= 0.1 + 0.9 * reliability.confidence.astype(np.float64, copy=False)[sample_mask]
+    return lab, rgb, weights, active, full_lab[active]
 
 
 def _initialize_centers(
     samples: NDArray[np.float64], weights: NDArray[np.float64], count: int
 ) -> NDArray[np.float64]:
-    weighted_mean = np.average(samples, axis=0, weights=weights)
-    distance = np.sum((samples - weighted_mean) ** 2, axis=1)
+    weighted_mean: NDArray[np.float64] = np.asarray(
+        np.average(samples, axis=0, weights=weights), dtype=np.float64
+    )
+    distance: NDArray[np.float64] = np.asarray(
+        np.sum((samples - weighted_mean) ** 2, axis=1), dtype=np.float64
+    )
     first = _argmax(distance * weights, "first palette center")
     indices = [first]
-    minimum_distance = np.sum((samples - samples[first]) ** 2, axis=1)
+    minimum_distance: NDArray[np.float64] = np.asarray(
+        np.sum((samples - samples[first]) ** 2, axis=1), dtype=np.float64
+    )
     while len(indices) < count:
-        score = minimum_distance * weights
+        score: NDArray[np.float64] = np.asarray(minimum_distance * weights, dtype=np.float64)
         score[np.asarray(indices, dtype=np.int64)] = -1.0
         selected = _argmax(score, "next palette center")
         if score[selected] <= 0.0:
             break
         indices.append(selected)
-        candidate_distance = np.sum((samples - samples[selected]) ** 2, axis=1)
-        minimum_distance = np.minimum(minimum_distance, candidate_distance)
+        candidate_distance: NDArray[np.float64] = np.asarray(
+            np.sum((samples - samples[selected]) ** 2, axis=1), dtype=np.float64
+        )
+        minimum_distance = np.asarray(
+            np.minimum(minimum_distance, candidate_distance), dtype=np.float64
+        )
     if len(indices) != count:
         raise EngineFailure(
             EngineError(
@@ -168,6 +245,7 @@ def _fit_hypothesis(
     rgb_samples: NDArray[np.float64],
     weights: NDArray[np.float64],
     active: NDArray[np.bool_],
+    assignment_samples: NDArray[np.float64],
     color_count: int,
     config: PaletteConfig,
 ) -> PaletteHypothesis:
@@ -249,8 +327,12 @@ def _fit_hypothesis(
     model_score = effective_samples * math.log(variance) + 3.0 * color_count * math.log(
         effective_samples
     )
+    assignment_squared = np.sum(
+        (assignment_samples[:, None, :] - centers[None, :, :]) ** 2,
+        axis=2,
+    )
     label_image = np.full(active.shape, -1, dtype=np.int16)
-    label_image[active] = labels
+    label_image[active] = np.argmin(assignment_squared, axis=1).astype(np.int16)
     label_image.setflags(write=False)
     return PaletteHypothesis(
         color_count=color_count,
@@ -268,7 +350,7 @@ def generate_palette_hypotheses(
 ) -> PaletteResult:
     config = config or PaletteConfig()
     _validate_config(config)
-    samples, rgb, weights, active = _active_samples(image, reliability, config)
+    samples, rgb, weights, active, assignment_samples = _active_samples(image, reliability, config)
     quantized = np.round(samples, decimals=6)
     try:
         distinct_count = int(np.unique(quantized, axis=0).shape[0])
@@ -293,7 +375,17 @@ def generate_palette_hypotheses(
     hypotheses: list[PaletteHypothesis] = []
     for color_count in range(minimum, maximum + 1):
         try:
-            hypotheses.append(_fit_hypothesis(samples, rgb, weights, active, color_count, config))
+            hypotheses.append(
+                _fit_hypothesis(
+                    samples,
+                    rgb,
+                    weights,
+                    active,
+                    assignment_samples,
+                    color_count,
+                    config,
+                )
+            )
         except EngineFailure as failure:
             if failure.error.code is not ErrorCode.PALETTE_AMBIGUOUS:
                 raise

@@ -17,6 +17,7 @@ SCHEMA_NAMES = (
     "benchmark-record",
     "dataset-manifest",
     "e2-g1-report",
+    "multicolor-g2-report",
 )
 
 
@@ -42,7 +43,7 @@ def test_schema_is_valid_draft_2020_12(name: str) -> None:
 def test_valid_fixture_is_accepted(name: str) -> None:
     schema = load_schema(SCHEMA_DIR / f"{name}.schema.json")
     fixture = load_json(SCHEMA_DIR / "fixtures" / "valid" / f"{name}.json")
-    Draft202012Validator(schema).validate(fixture)
+    cast(Any, Draft202012Validator(schema)).validate(fixture)
 
 
 @pytest.mark.parametrize("name", SCHEMA_NAMES)
@@ -50,4 +51,4 @@ def test_invalid_fixture_is_rejected(name: str) -> None:
     schema = load_schema(SCHEMA_DIR / f"{name}.schema.json")
     fixture = load_json(SCHEMA_DIR / "fixtures" / "invalid" / f"{name}.json")
     with pytest.raises(ValidationError):
-        Draft202012Validator(schema).validate(fixture)
+        cast(Any, Draft202012Validator(schema)).validate(fixture)

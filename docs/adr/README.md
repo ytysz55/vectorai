@@ -13,3 +13,9 @@ Each ADR contains:
 - review trigger.
 
 Statuses: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
+
+## Current records
+
+- [`ADR-008-determinism-contract.md`](ADR-008-determinism-contract.md)
+- [`ADR-011-coordinate-epsilon-serialization.md`](ADR-011-coordinate-epsilon-serialization.md)
+- [`ADR-016-local-first-web-deployment.md`](ADR-016-local-first-web-deployment.md)

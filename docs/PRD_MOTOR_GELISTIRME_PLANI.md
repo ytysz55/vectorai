@@ -1163,7 +1163,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [ ] **ADR-013:** Cut-ready minimum geometri toleransları.
 - [ ] **ADR-014:** Artifact storage, veri retention ve silme.
 - [ ] **ADR-015:** Lokal reprocess graph invalidation sınırı.
-- [ ] **ADR-016:** Local-first web deployment, localhost güvenliği ve opsiyonel Tauri paketleme.
+- [x] **ADR-016:** Local-first web deployment, localhost güvenliği ve opsiyonel Tauri paketleme — `docs/adr/ADR-016-local-first-web-deployment.md`.
 
 Her ADR; bağlam, seçenekler, karar, gerekçe, benchmark kanıtı, sonuçlar ve geri dönüş maliyeti içerir.
 
@@ -1306,7 +1306,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ## E3 — Multicolor, primitive recovery ve demo web — 28–33 gün
 
-**Durum:** COL-001…COL-006 ve DEMO-001 tamamlandı. Kayıtlı gerçek G2 run'ı exact topology `%100` ve maximum transparent seam gap `%0` verdi; ancak VTracer fidelity bandındaki node advantage `-0.20` oldu. `vtracer_node_advantage_nonnegative` artık hard criterion olduğundan COL-007/Gate G2 dürüstçe açık kalır; yeniden koşmak için pinned yerel VTracer executable gereklidir.
+**Durum:** COL-001…COL-007, GEO-001…GEO-003 ve DEMO-001 tamamlandı. 11 adet 2–12 renk stripe ile 6 logo/ikon/Türkçe vakayı içeren 17-vakalık G2 v2; overall/representative/Türkçe exact topology `%100`, resvg/Inkscape/Chromium maksimum seam gap `%0`, overall VTracer node avantajı `%61.46` ve representative node avantajı `%72.90` ile geçti. Üç renderer matrisinde minimum seam alpha `0.9961`, maksimum channel delta `0.06275`; semantic digest `af70104687b5f682e11ed19c3b5d0092ddc04c106e0763e3db2c456865cbe009` iki bağımsız koşuda tekrarlandı.
 
 - [x] **COL-001 — OKLab palette hypotheses** — P0, 3 gün, bağımlılık: G1
   - **Kabul:** 2–12 renk sentetik sette palette count/color hatası raporlanır.
@@ -1321,6 +1321,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
   - **Kabul:** Checkerboard/diagonal/T-junction belirsizliği alternatif ve confidence üretir.
 
 - [x] **COL-005 — Shared boundary assembly ve seam matrix** — P0, 3 gün, bağımlılık: COL-004
+  - **Durum:** Canonical shared geometry, reverse face reference ve gerçek pinned resvg 0.47.0 / Inkscape 1.4.2 / Chromium 153 seam matrisi tamamlandı.
   - **Kabul:** Komşu path’ler aynı geometry’den gelir; resvg/Chromium/Inkscape test raporu vardır.
 
 - [x] **GEO-001 — Line/arc/circle adayları** — P0, 2 gün, bağımlılık: COL-005
@@ -1335,7 +1336,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **COL-006 — Multicolor model selection ve export** — P0, 3 gün, bağımlılık: GEO-001, GEO-002, GEO-003
   - **Kabul:** Top-K scene ve skor bileşenleri manifestte; topology regressions hard fail.
 
-- [ ] **COL-007 — Multicolor locked gate raporu** — P0, 1 gün, bağımlılık: COL-006
+- [x] **COL-007 — Multicolor locked gate raporu** — P0, 1 gün, bağımlılık: COL-006
   - **Kabul:** G2 topology/fidelity/node/seam sonuçları yayınlanır.
 
 - [x] **DEMO-001 — Minimal local-first web yatırım arayüzü** — P0, 3 gün, bağımlılık: COL-007, ADR-016
@@ -1344,7 +1345,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ### Gate G2 — Multicolor yatırım prototipi
 
-**Durum:** Açık. `out/multicolor-g2-real/g2-report.json` topology ve seam kriterlerini geçer, fakat node advantage `-0.20` olduğu için güncel hard criterion'u geçmez. Bu makinede pinned `vtracer` executable bulunmadığından yeniden koşum yapılamadı.
+**Durum:** Geçildi. `out/multicolor-g2-renderer-matrix/g2-report.json` ve `out/multicolor-g2-renderer-matrix-repeat/g2-report.json` schema-valid ve deterministiktir. 17/17 exact topology, 17 fidelity-band karşılaştırması, üç gerçek renderer’da `%0` seam gap, overall `%61.46` ve representative `%72.90` VTracer node avantajı ölçüldü. Alpha-fringe palette patlaması stable-color-core sampling ile; nested/Türkçe topology semantiği global alpha hole ve gerçek connected-component truth ile; shared node fazlalığı twin yüzlerin ters yönde kullandığı canonical-chain sadeleştirmesiyle giderildi.
 
 - Shared-boundary topolojisi ve renderer seam sonuçları açıkça gösterilir.
 - Aynı fidelity bandında VTracer'a karşı nonnegative node advantage zorunludur.
@@ -1646,11 +1647,11 @@ Cevap gelene kadar varsayılanlar:
 - [ ] PRD kapsamının kalan maddeleri kullanıcı tarafından onaylandı.
 - [ ] Yatırım prototipi ile pilot MVP ayrımı kabul edildi.
 - [ ] E0 ADR’leri açıldı.
-- [ ] Dependency/lisans allowlist hazır.
-- [ ] Benchmark dataset provenance şeması hazır.
-- [ ] Locked split sahibi ve erişim kuralı belirlendi.
+- [x] Dependency/lisans allowlist hazır.
+- [x] Benchmark dataset provenance şeması hazır.
+- [x] Locked split sahibi ve erişim kuralı belirlendi.
 - [ ] Referans development makinesi tanımlandı.
-- [ ] G0 ve G1 gate eşikleri kabul edildi.
-- [ ] Repository/CI bootstrap görevi başlatılabilir.
+- [x] G0 ve G1 gate eşikleri kabul edildi.
+- [x] Repository/CI bootstrap tamamlandı.
 
 Bu kontrol listesi tamamlanmadan algoritma kodu yazılmamalıdır.

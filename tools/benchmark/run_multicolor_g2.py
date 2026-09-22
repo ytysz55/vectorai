@@ -39,6 +39,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--vtracer")
     parser.add_argument("--resvg")
+    parser.add_argument("--inkscape")
+    parser.add_argument("--chromium")
+    parser.add_argument("--require-auxiliary-renderers", action="store_true")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
@@ -57,11 +60,24 @@ def main() -> int:
             expected_version_output=resvg_lock.version_output,
             expected_executable_sha256=resvg_lock.executable_sha256,
         )
+        inkscape_prefix = (
+            (str(executable(args.inkscape, "inkscape")),)
+            if args.inkscape is not None or args.require_auxiliary_renderers
+            else None
+        )
+        chromium_prefix = (
+            (str(executable(args.chromium, "chromium")),)
+            if args.chromium is not None or args.require_auxiliary_renderers
+            else None
+        )
         evaluation = run_multicolor_gate(
             args.output,
             resvg_executable=resvg_path,
             vtracer=vtracer,
             renderer=renderer,
+            inkscape_command_prefix=inkscape_prefix,
+            chromium_command_prefix=chromium_prefix,
+            require_auxiliary_renderers=args.require_auxiliary_renderers,
         )
     except (OSError, RuntimeError, ValueError) as error:
         print(f"multicolor G2 benchmark failed to run: {error}")
