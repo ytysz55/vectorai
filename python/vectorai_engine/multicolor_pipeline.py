@@ -19,9 +19,11 @@ from .decode import DecodeLimits, decode_path
 from .errors import EngineError, EngineFailure, ErrorCode, RunStatus, Stage
 from .junctions import analyze_junction_hypotheses
 from .multicolor_graph import build_multicolor_region_graph
+from .multicolor_optimizer import optimize_multicolor_hypotheses
 from .multicolor_scene import export_multicolor_svg, select_multicolor_scene
 from .normalize import normalize_source
 from .palette import PaletteConfig, generate_palette_hypotheses
+from .profiles import OptimizationMode, load_optimizer_profiles
 from .reliability import analyze_reliability
 from .segmentation import SpatialSegmentationConfig, segment_multicolor
 from .shared_boundary import assemble_shared_boundaries, measure_renderer_seams
@@ -38,6 +40,8 @@ class MulticolorPipelineConfig:
     segmentation: SpatialSegmentationConfig = field(default_factory=SpatialSegmentationConfig)
     decode_limits: DecodeLimits = field(default_factory=DecodeLimits)
     primitive_tolerance: float = 0.75
+    optimizer_profile_path: Path | None = None
+    optimizer_mode: OptimizationMode = OptimizationMode.GEOMETRIC
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +164,55 @@ def run_multicolor_pipeline(
         tempfile.mkdtemp(prefix=f".{output_directory.name}-", dir=output_directory.parent)
     )
     try:
+        optimizer_manifest: dict[str, object] | None = None
+        optimizer_degraded = False
+        optimizer_fallback_reason: str | None = None
+        if config.optimizer_profile_path is not None:
+            optimization_started = time.perf_counter()
+            try:
+                profile_set = load_optimizer_profiles(config.optimizer_profile_path)
+                profile = profile_set.select(config.optimizer_mode)
+                optimization = optimize_multicolor_hypotheses(
+                    graph,
+                    palette,
+                    assembly,
+                    normalized,
+                    baseline_tolerance=config.primitive_tolerance,
+                    profile=profile,
+                    resvg_executable=config.resvg_executable,
+                    resvg_command_prefix=config.resvg_command_prefix,
+                )
+            except Exception as error:
+                optimizer_degraded = True
+                optimizer_fallback_reason = (
+                    error.error.code.value
+                    if isinstance(error, EngineFailure)
+                    else type(error).__name__
+                )
+                optimizer_manifest = {
+                    "status": "degraded",
+                    "fallback_used": True,
+                    "fallback_reason": optimizer_fallback_reason,
+                    "mode": config.optimizer_mode.value,
+                }
+            else:
+                scene = optimization.scene
+                optimizer_manifest = {
+                    "status": "success",
+                    "fallback_used": False,
+                    "profile_set_sha256": profile_set.sha256,
+                    "profile_sha256": optimization.profile_sha256,
+                    "mode": profile.mode.value,
+                    "selected_candidate_id": optimization.selected_candidate_id,
+                    "baseline_node_count": optimization.baseline_node_count,
+                    "selected_node_count": optimization.selected_node_count,
+                    "candidates": [asdict(item) for item in optimization.candidates],
+                    "rejected_tolerances": [
+                        list(item) for item in optimization.rejected_tolerances
+                    ],
+                    "render_rank": asdict(optimization.render_rank),
+                }
+            durations["optimization"] = (time.perf_counter() - optimization_started) * 1000.0
         svg_path = temporary / "output.svg"
         export_started = time.perf_counter()
         _, scene_manifest = export_multicolor_svg(scene, palette, svg_path)
@@ -199,6 +252,7 @@ def run_multicolor_pipeline(
                     "canonical_edge_count": len(assembly.segments),
                 },
                 "scene": scene_manifest,
+                "optimizer": optimizer_manifest,
             },
         )
         preview_path = temporary / "preview.png"
@@ -269,7 +323,13 @@ def run_multicolor_pipeline(
             (item.transparent_gap_rate for item in seam_matrix.observations),
             default=0.0,
         )
-        final_status = RunStatus.SUCCESS if gap_rate == 0.0 else RunStatus.NEEDS_REVIEW
+        final_status = (
+            RunStatus.NEEDS_REVIEW
+            if gap_rate > 0.0
+            else RunStatus.DEGRADED
+            if optimizer_degraded
+            else RunStatus.SUCCESS
+        )
         manifest_path = temporary / "run-manifest.json"
         _write_json(
             manifest_path,
@@ -285,6 +345,12 @@ def run_multicolor_pipeline(
                     "palette": asdict(config.palette),
                     "segmentation": asdict(config.segmentation),
                     "primitive_tolerance": config.primitive_tolerance,
+                    "optimizer_mode": config.optimizer_mode.value
+                    if config.optimizer_profile_path is not None
+                    else None,
+                    "optimizer_profile_sha256": optimizer_manifest.get("profile_sha256")
+                    if optimizer_manifest is not None
+                    else None,
                     "determinism_policy": "strict",
                 },
                 "stages": [
@@ -297,7 +363,14 @@ def run_multicolor_pipeline(
                 },
                 "auxiliary_renderers": auxiliary_results,
                 "seams": asdict(seam_matrix),
-                "warnings": list(normalized.warnings),
+                "warnings": [
+                    *normalized.warnings,
+                    *(
+                        (f"optimizer fallback: {optimizer_fallback_reason}",)
+                        if optimizer_fallback_reason is not None
+                        else ()
+                    ),
+                ],
                 "final_status": final_status.value,
                 "artifacts": [
                     _artifact(svg_path, temporary, "image/svg+xml"),

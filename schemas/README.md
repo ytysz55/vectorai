@@ -12,6 +12,8 @@ All public JSON artifacts use JSON Schema draft 2020-12 and carry an explicit `s
 | `e2-g1-report.schema.json` | Binary gate metrics, ablations, baseline comparison, and verdict |
 | `multicolor-g2-report.schema.json` | Multicolor topology, fidelity, seam, node, and renderer evidence |
 | `stroke-g3-report.schema.json` | Stroke routing, centerline, width, style, cut-outline, and gate verdict |
+| `optimizer-profiles.schema.json` | Four-mode E5 objective weights, bounded refinement, and render-rank policy |
+| `optimizer-g4-report.schema.json` | E5 ablation, topology, fidelity, node, runtime, and continuation verdict |
 
 `fixtures/valid` must be accepted and `fixtures/invalid` must be rejected by the schema test suite.
 

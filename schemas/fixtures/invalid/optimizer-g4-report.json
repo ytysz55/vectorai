@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "gate": "G3",
+  "mode": "minimal",
+  "profile_set_sha256": "invalid",
+  "profile_sha256": "invalid",
+  "semantic_digest": "invalid",
+  "cases": [],
+  "evaluation": {}
+}

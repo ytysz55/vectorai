@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "gate": "G4",
+  "mode": "minimal",
+  "profile_set_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "profile_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "semantic_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "cases": [
+    {
+      "case_id": "optimizer-001",
+      "exact_topology": true,
+      "fallback_used": false,
+      "baseline_node_count": 100,
+      "optimized_node_count": 80,
+      "baseline_rmse": 0.1,
+      "optimized_rmse": 0.08,
+      "fidelity_improvement": 0.02,
+      "node_advantage": 0.2,
+      "baseline_runtime_ms": 100,
+      "optimized_runtime_ms": 200
+    }
+  ],
+  "evaluation": {
+    "passed": true,
+    "case_count": 1,
+    "exact_topology_rate": 1,
+    "fallback_count": 0,
+    "node_regression_count": 0,
+    "median_fidelity_improvement": 0.02,
+    "mean_fidelity_improvement": 0.02,
+    "improved_case_count": 3,
+    "fidelity_regression_count": 0,
+    "median_node_advantage": 0.2,
+    "optimized_runtime_p95_ms": 200,
+    "criteria": {
+      "exact_topology": true,
+      "zero_fallback": true,
+      "zero_node_regression": true,
+      "zero_fidelity_regression": true,
+      "measurable_mean_fidelity_gain": true,
+      "minimum_three_improved_cases": true,
+      "runtime_p95_within_20s": true
+    }
+  }
+}

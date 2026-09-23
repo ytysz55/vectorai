@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vectorai.local/optimizer-g4-report.schema.json",
+  "title": "VectorAI Optimizer Gate G4 Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate",
+    "mode",
+    "profile_set_sha256",
+    "profile_sha256",
+    "semantic_digest",
+    "cases",
+    "evaluation"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "gate": {"const": "G4"},
+    "mode": {"enum": ["faithful", "geometric", "minimal", "cut_ready"]},
+    "profile_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "semantic_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/case"}
+    },
+    "evaluation": {"$ref": "#/$defs/evaluation"}
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "exact_topology",
+        "fallback_used",
+        "baseline_node_count",
+        "optimized_node_count",
+        "baseline_rmse",
+        "optimized_rmse",
+        "fidelity_improvement",
+        "node_advantage",
+        "baseline_runtime_ms",
+        "optimized_runtime_ms"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "exact_topology": {"type": "boolean"},
+        "fallback_used": {"type": "boolean"},
+        "baseline_node_count": {"type": "integer", "minimum": 0},
+        "optimized_node_count": {"type": "integer", "minimum": 0},
+        "baseline_rmse": {"type": "number", "minimum": 0, "maximum": 1},
+        "optimized_rmse": {"type": "number", "minimum": 0, "maximum": 1},
+        "fidelity_improvement": {"type": "number", "minimum": -1, "maximum": 1},
+        "node_advantage": {"type": "number", "minimum": -1, "maximum": 1},
+        "baseline_runtime_ms": {"type": "number", "minimum": 0},
+        "optimized_runtime_ms": {"type": "number", "minimum": 0}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "case_count",
+        "exact_topology_rate",
+        "fallback_count",
+        "node_regression_count",
+        "median_fidelity_improvement",
+        "mean_fidelity_improvement",
+        "improved_case_count",
+        "fidelity_regression_count",
+        "median_node_advantage",
+        "optimized_runtime_p95_ms",
+        "criteria"
+      ],
+      "properties": {
+        "passed": {"type": "boolean"},
+        "case_count": {"type": "integer", "minimum": 1},
+        "exact_topology_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "fallback_count": {"type": "integer", "minimum": 0},
+        "node_regression_count": {"type": "integer", "minimum": 0},
+        "median_fidelity_improvement": {"type": "number", "minimum": -1, "maximum": 1},
+        "mean_fidelity_improvement": {"type": "number", "minimum": -1, "maximum": 1},
+        "improved_case_count": {"type": "integer", "minimum": 0},
+        "fidelity_regression_count": {"type": "integer", "minimum": 0},
+        "median_node_advantage": {"type": "number", "minimum": -1, "maximum": 1},
+        "optimized_runtime_p95_ms": {"type": "number", "minimum": 0},
+        "criteria": {
+          "type": "object",
+          "additionalProperties": {"type": "boolean"},
+          "minProperties": 7
+        }
+      }
+    }
+  }
+}

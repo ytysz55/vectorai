@@ -289,7 +289,7 @@ Arayüz React/TypeScript ile tarayıcıda açılır; motor tarayıcı/WASM için
 | --- | --- | --- |
 | FR-104 | Stroke branch | Centerline, width, cap, join ve junction açıklaması üretir. |
 | FR-105 | Top-K scene hypotheses | Aday skor farkı ve belirsizlik saklanır. |
-| FR-106 | Ceres optimizer | Topoloji immutable kalırken geometri/renk/width optimize edilir. |
+| FR-106 | Global optimizer | Topoloji immutable kalırken geometri/renk/width önce solver-independent deterministik backend ile optimize edilir; Gate G4 değer/runtime sonucuna göre Ceres production backend’e taşınır. |
 | FR-107 | Multi-background validation | Alpha siyah, beyaz, transparan ve checkerboard üzerinde ölçülür. |
 | FR-108 | Cut-ready | Açık/duplicate/self-intersecting contour hard fail olur. |
 | FR-109 | Lokal yeniden işleme | Etkilenen graph bölümü invalidation sözleşmesine göre yenilenir. |
@@ -1153,7 +1153,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [ ] **ADR-003:** C++/Python sınırı ve dependency manager.
 - [ ] **ADR-004:** Half-edge orientation, outer face ve görünmeyen katman politikası.
 - [ ] **ADR-005:** 4/8-connectivity ve diagonal junction hipotezleri.
-- [ ] **ADR-006:** İç optimizer evaluator ile referans renderer ayrımı.
+- [x] **ADR-006:** İç optimizer evaluator ile referans renderer ayrımı — `docs/adr/ADR-006-optimizer-evaluator-renderer-separation.md`.
 - [ ] **ADR-007:** DP/beam/MILP model selection yaklaşımı ve FTO etkisi.
 - [x] **ADR-008:** Platform içi/platformlar arası determinism — `docs/adr/ADR-008-determinism-contract.md`.
 - [ ] **ADR-009:** PDF backend ve fiziksel ölçü.
@@ -1388,31 +1388,44 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ## E5 — Global optimizer ve render-and-rank — 15–20 gün
 
-- [ ] **OPT-001 — Objective term normalizasyonu** — P1, 2 gün, bağımlılık: G2 veya G3
+- [x] **OPT-001 — Objective term normalizasyonu** — P1, 2 gün, bağımlılık: G2 veya G3
+  - **Durum:** Fidelity/color unit interval, boundary/regularization image-diagonal ve complexity pre-opt baseline oranıyla normalize edilir; topology weighted penalty değil hard eligibility gate’tir. Unit ve scale-invariance testleri eklendi.
   - **Kabul:** Her term unit test ve ölçek analizi içerir.
 
-- [ ] **OPT-002 — Profile ağırlıkları ve config versioning** — P1, 2 gün, bağımlılık: OPT-001
+- [x] **OPT-002 — Profile ağırlıkları ve config versioning** — P1, 2 gün, bağımlılık: OPT-001
+  - **Durum:** `benchmark/configs/optimizer-profiles-v1.json` dört modu, deterministic bütçeleri ve render-rank politikasını kod dışında tutar; strict loader canonical JSON üzerinden profile ve profile-set SHA-256 üretir.
   - **Kabul:** Dört modun ayarları kod dışında ve hash’lenebilir.
 
-- [ ] **OPT-003 — Ceres parameter blocks** — P1, 3 gün, bağımlılık: OPT-001
-  - **Kabul:** Vertex, primitive, color ve width bounds test edilir.
+- [x] **OPT-003P — Solver-independent parameter blocks ve deterministik Python backend** — P1, 3 gün, bağımlılık: OPT-001, ADR-006
+  - **Durum:** Canonical-order vertex, primitive, RGBA ve width block’ları; projected coordinate refinement; fixed step/iteration/evaluation bütçesi ve deterministik accepted snapshot kontratı tamamlandı.
+  - **Kabul:** Vertex, primitive, color ve width bounds test edilir; sabit adım/evaluation bütçeli backend deterministiktir.
 
-- [ ] **OPT-004 — Hard/soft constraint residual’ları** — P1, 4 gün, bağımlılık: OPT-003
+- [ ] **OPT-003C — Ceres backend parity/migration** — Koşullu P1, 3–5 gün, bağımlılık: G4
+  - **Kabul:** Yalnız G4 ölçülebilir kalite değerini doğrular veya Python heavy-path runtime hedefini kaçırırsa açılır; OPT-003P parameter/result kontratı ve determinism parity testleri korunur.
+
+- [x] **OPT-004 — Hard/soft constraint residual’ları** — P1, 4 gün, bağımlılık: OPT-003P
+  - **Durum:** Topology signature’ın component/hole/adjacency/cycle/shared geometry/connectivity/valence/path/node alanları non-compensable hard gate’tir; radius/width positivity bounds ile korunur.
   - **Kabul:** Shared boundary, closure ve positive radius/width hiçbir testte bozulmaz.
 
-- [ ] **OPT-005 — Robust refinement ve early stop** — P1, 3 gün, bağımlılık: OPT-004
+- [x] **OPT-005 — Robust refinement ve early stop** — P1, 3 gün, bağımlılık: OPT-004
+  - **Durum:** Fixed candidate/iteration/evaluation bütçeleri, minimum-improvement kabulü, early stop ve node-regression reddi uygulanır.
   - **Kabul:** Fidelity iyileşir; topology/node gerilemesi olmaz; runtime bounded.
 
-- [ ] **OPT-006 — Top-K resvg render-and-rank** — P1, 2 gün, bağımlılık: OPT-005
+- [x] **OPT-006 — Top-K resvg render-and-rank** — P1, 2 gün, bağımlılık: OPT-005
+  - **Durum:** Baseline daima Top-K içinde tutulur; `0.5×/1×/2×/4×` ve transparan/siyah/beyaz/checkerboard skorları profile fidelity bandı ve stable ID tie-break ile manifestte saklanır.
   - **Kabul:** Multi-scale/background skorları ve deterministik winner manifestte.
 
-- [ ] **OPT-007 — Divergence/fallback** — P1, 2 gün, bağımlılık: OPT-006
+- [x] **OPT-007 — Divergence/fallback** — P1, 2 gün, bağımlılık: OPT-006
+  - **Durum:** Non-finite/evaluator/renderer/profile failure kontrollüdür; yalnız önceden hard-valid baseline `degraded` fallback olabilir, invalid baseline fallback olmaz.
   - **Kabul:** NaN/crash yok; pre-opt fallback yalnızca hard validation geçerse kullanılır.
 
-- [ ] **OPT-008 — Optimizer ablation ve gate raporu** — P1, 1 gün, bağımlılık: OPT-007
+- [x] **OPT-008 — Optimizer ablation ve gate raporu** — P1, 1 gün, bağımlılık: OPT-007
+  - **Durum:** `out/optimizer-g4-final/g4-report.json` ve repeat raporu schema-valid, digest-repeat ve runtime/RSS dışı semantic projection taşır.
   - **Kabul:** Kalite kazancı/runtime maliyeti açıkça ölçülür.
 
 ### Gate G4 — Optimizer devam kararı
+
+**Durum:** Geçildi. 17 locked multicolor vakasında topology `%100`, fallback/node/fidelity regression `0`, iyileşen vaka `3`, ortalama multi-scale/background RMSE kazancı `0.001594` ve optimizer heavy-path p95 yaklaşık `17.5 s` ölçüldü. İyileşen representative vakalarda node avantajı junction `%50`, nested `%83.1`, shared-edge `%27.3` oldu. İki bağımsız koşunun semantic digest’i `511db65aef2ffbe3957eb7640b96a045415ae5aa53fbcd77b97b280bf358bdf5` ile eşleşti. Optimizer değer gösterdiği için quality/offline yolunda tutulur; p95 maliyeti nedeniyle fast/default yola alınmadan önce koşullu OPT-003C Ceres parity/migration değerlendirilir.
 
 Ölçülebilir kalite kazancı yoksa optimizer varsayılan hızlı moddan çıkarılır; yalnızca offline/quality modunda tutulur.
 

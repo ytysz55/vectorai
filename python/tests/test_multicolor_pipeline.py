@@ -7,11 +7,14 @@ from PIL import Image
 from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
 from vectorai_bench.fixtures import generate_fixture_set
-from vectorai_engine import RunStatus
+from vectorai_engine import OptimizationMode, RunStatus
 from vectorai_engine.multicolor_pipeline import (
     MulticolorPipelineConfig,
     run_multicolor_pipeline,
 )
+
+ROOT = Path(__file__).resolve().parents[2]
+PROFILE_PATH = ROOT / "benchmark" / "configs" / "optimizer-profiles-v1.json"
 
 
 def fake_resvg(path: Path) -> tuple[str, ...]:
@@ -109,6 +112,64 @@ def test_representative_pipeline_preserves_topology_with_bounded_nodes(
         assert scene["graph"]["face_count"] == truth[0]
         assert scene["graph"]["hole_count"] == truth[1]
         assert scene["scene"]["editability"]["node_count"] < truth[2]
+
+
+def test_optimizer_path_records_top_k_oracle_and_profile_hash(tmp_path: Path) -> None:
+    source = tmp_path / "source.png"
+    input_image(source)
+    first = run_multicolor_pipeline(
+        source,
+        tmp_path / "optimized-a",
+        MulticolorPipelineConfig(
+            resvg_command_prefix=fake_resvg(tmp_path / "optimizer-resvg-a.py"),
+            optimizer_profile_path=PROFILE_PATH,
+            optimizer_mode=OptimizationMode.MINIMAL,
+        ),
+    )
+    second = run_multicolor_pipeline(
+        source,
+        tmp_path / "optimized-b",
+        MulticolorPipelineConfig(
+            resvg_command_prefix=fake_resvg(tmp_path / "optimizer-resvg-b.py"),
+            optimizer_profile_path=PROFILE_PATH,
+            optimizer_mode=OptimizationMode.MINIMAL,
+        ),
+    )
+
+    first_scene = json.loads(first.scene_path.read_text(encoding="utf-8"))
+    second_scene = json.loads(second.scene_path.read_text(encoding="utf-8"))
+    optimizer = first_scene["optimizer"]
+    assert optimizer == second_scene["optimizer"]
+    assert len(optimizer["profile_sha256"]) == 64
+    assert optimizer["mode"] == "minimal"
+    assert optimizer["selected_node_count"] <= optimizer["baseline_node_count"]
+    assert optimizer["selected_candidate_id"] == optimizer["render_rank"]["winner_id"]
+    assert all(len(score["observations"]) == 16 for score in optimizer["render_rank"]["scores"])
+
+
+def test_optimizer_failure_uses_validated_degraded_fallback(tmp_path: Path) -> None:
+    source = tmp_path / "source.png"
+    input_image(source)
+    bundle = run_multicolor_pipeline(
+        source,
+        tmp_path / "degraded",
+        MulticolorPipelineConfig(
+            resvg_command_prefix=fake_resvg(tmp_path / "fallback-resvg.py"),
+            optimizer_profile_path=tmp_path / "missing-profiles.json",
+        ),
+    )
+
+    scene = json.loads(bundle.scene_path.read_text(encoding="utf-8"))
+    manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
+    assert bundle.final_status is RunStatus.DEGRADED
+    assert scene["optimizer"] == {
+        "fallback_reason": "ValueError",
+        "fallback_used": True,
+        "mode": "geometric",
+        "status": "degraded",
+    }
+    assert manifest["final_status"] == "degraded"
+    assert manifest["warnings"][-1] == "optimizer fallback: ValueError"
 
 
 def test_pipeline_records_required_three_renderer_seam_matrix(tmp_path: Path) -> None:
