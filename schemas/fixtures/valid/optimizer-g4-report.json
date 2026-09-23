@@ -17,7 +17,14 @@
       "fidelity_improvement": 0.02,
       "node_advantage": 0.2,
       "baseline_runtime_ms": 100,
-      "optimized_runtime_ms": 200
+      "optimized_runtime_ms": 200,
+      "optimizer_stage_ms": {
+        "scene_selection": 20,
+        "export_editability": 10,
+        "objective": 1,
+        "render_rank": 150,
+        "total": 181
+      }
     }
   ],
   "evaluation": {

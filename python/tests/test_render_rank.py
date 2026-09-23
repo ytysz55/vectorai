@@ -76,6 +76,7 @@ def test_top_k_resvg_ranks_all_scales_and_backgrounds_deterministically(
 
     assert first == second
     assert first.winner_id == "red-compact"
+    assert first.unique_svg_count == 2
     assert first.candidate_order == (
         "blue-low-objective",
         "red-oracle-winner",

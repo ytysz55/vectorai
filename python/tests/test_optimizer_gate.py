@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from vectorai_bench.optimizer_gate import OptimizerCaseMeasurement, evaluate_optimizer_g4
+from vectorai_bench.optimizer_gate import (
+    OptimizerCaseMeasurement,
+    evaluate_optimizer_g4,
+    optimizer_semantic_digest,
+)
 
 
 def measurement(case_id: str, **changes: object) -> OptimizerCaseMeasurement:
@@ -18,6 +22,13 @@ def measurement(case_id: str, **changes: object) -> OptimizerCaseMeasurement:
         "node_advantage": 0.25,
         "baseline_runtime_ms": 100.0,
         "optimized_runtime_ms": 200.0,
+        "optimizer_stage_ms": {
+            "scene_selection": 20.0,
+            "export_editability": 10.0,
+            "objective": 1.0,
+            "render_rank": 150.0,
+            "total": 181.0,
+        },
     }
     values.update(changes)
     return OptimizerCaseMeasurement(**values)  # type: ignore[arg-type]
@@ -40,6 +51,35 @@ def test_g4_requires_topology_nodes_fidelity_and_runtime() -> None:
     assert evaluation.fidelity_regression_count == 0
     assert evaluation.median_node_advantage == 0.25
     assert all(evaluation.criteria.values())
+
+
+def test_semantic_digest_excludes_all_runtime_observations() -> None:
+    fast = [measurement("a"), measurement("b"), measurement("c")]
+    slow = [
+        replace(
+            item,
+            baseline_runtime_ms=item.baseline_runtime_ms * 101.0,
+            optimized_runtime_ms=item.optimized_runtime_ms * 101.0,
+            optimizer_stage_ms={
+                key: value * 101.0 for key, value in item.optimizer_stage_ms.items()
+            },
+        )
+        for item in fast
+    ]
+
+    fast_evaluation = evaluate_optimizer_g4(fast)
+    slow_evaluation = evaluate_optimizer_g4(slow)
+
+    assert fast_evaluation.passed
+    assert not slow_evaluation.passed
+    assert optimizer_semantic_digest(
+        fast, fast_evaluation, "a" * 64, "b" * 64
+    ) == optimizer_semantic_digest(
+        slow,
+        slow_evaluation,
+        "a" * 64,
+        "b" * 64,
+    )
 
 
 def test_g4_rejects_each_hard_regression() -> None:

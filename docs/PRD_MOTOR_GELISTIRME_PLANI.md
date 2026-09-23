@@ -1401,6 +1401,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
   - **Kabul:** Vertex, primitive, color ve width bounds test edilir; sabit adım/evaluation bütçeli backend deterministiktir.
 
 - [ ] **OPT-003C — Ceres backend parity/migration** — Koşullu P1, 3–5 gün, bağımlılık: G4
+  - **Durum:** `SPIKE-017` renderer oracle bottleneck’ini doğruladı; continuous palette evaluator production OPT-003P kontratına bağlandı fakat vaka başına en fazla `46 ms` kullandı. Ceres’in end-to-end kazancı olmadığı için dependency entegrasyonu ertelendi; vertex/primitive/width evaluator maliyeti büyürse yeniden açılır.
   - **Kabul:** Yalnız G4 ölçülebilir kalite değerini doğrular veya Python heavy-path runtime hedefini kaçırırsa açılır; OPT-003P parameter/result kontratı ve determinism parity testleri korunur.
 
 - [x] **OPT-004 — Hard/soft constraint residual’ları** — P1, 4 gün, bağımlılık: OPT-003P
@@ -1425,7 +1426,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ### Gate G4 — Optimizer devam kararı
 
-**Durum:** Geçildi. 17 locked multicolor vakasında topology `%100`, fallback/node/fidelity regression `0`, iyileşen vaka `3`, ortalama multi-scale/background RMSE kazancı `0.001594` ve optimizer heavy-path p95 yaklaşık `17.5 s` ölçüldü. İyileşen representative vakalarda node avantajı junction `%50`, nested `%83.1`, shared-edge `%27.3` oldu. İki bağımsız koşunun semantic digest’i `511db65aef2ffbe3957eb7640b96a045415ae5aa53fbcd77b97b280bf358bdf5` ile eşleşti. Optimizer değer gösterdiği için quality/offline yolunda tutulur; p95 maliyeti nedeniyle fast/default yola alınmadan önce koşullu OPT-003C Ceres parity/migration değerlendirilir.
+**Durum:** Geçildi. 17 locked multicolor vakasında topology `%100`, fallback/node/fidelity regression `0`, iyileşen vaka `3` ve ortalama multi-scale/background RMSE kazancı `0.001594` ölçüldü. Byte-identical SVG render/score deduplication, prepared reference cache ve byte-exact compositing sonrası optimizer heavy-path p95 iki koşuda `4.79 s` ve `4.27 s` oldu. İyileşen representative vakalarda node avantajı junction `%50`, nested `%83.1`, shared-edge `%27.3` kaldı. İki bağımsız koşunun runtime-dışı semantic digest’i `cfb197b194c2a14a64e49748988e6cbce53f269c01f2c6ccbabf38480111d81a` ile eşleşti. Optimizer quality/offline yolunda tutulur; Continuous palette evaluator production yoluna bağlandı ve vaka başına en fazla `46 ms` kullandı; Ceres ancak vertex/primitive/width evaluator maliyeti ölçülebilir biçimde büyürse parity backend olarak eklenir.
 
 Ölçülebilir kalite kazancı yoksa optimizer varsayılan hızlı moddan çıkarılır; yalnızca offline/quality modunda tutulur.
 

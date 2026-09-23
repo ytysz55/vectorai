@@ -139,7 +139,19 @@ def test_optimizer_path_records_top_k_oracle_and_profile_hash(tmp_path: Path) ->
     first_scene = json.loads(first.scene_path.read_text(encoding="utf-8"))
     second_scene = json.loads(second.scene_path.read_text(encoding="utf-8"))
     optimizer = first_scene["optimizer"]
-    assert optimizer == second_scene["optimizer"]
+    second_optimizer = second_scene["optimizer"]
+    assert {key: value for key, value in optimizer.items() if key != "stage_timings"} == {
+        key: value for key, value in second_optimizer.items() if key != "stage_timings"
+    }
+    assert {item["stage"] for item in optimizer["stage_timings"]} == {
+        "scene_selection",
+        "export_editability",
+        "continuous_refinement",
+        "objective",
+        "render_rank",
+        "total",
+    }
+    assert all(item["duration_ms"] >= 0.0 for item in optimizer["stage_timings"])
     assert len(optimizer["profile_sha256"]) == 64
     assert optimizer["mode"] == "minimal"
     assert optimizer["selected_node_count"] <= optimizer["baseline_node_count"]

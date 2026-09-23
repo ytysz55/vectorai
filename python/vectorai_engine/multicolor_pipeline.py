@@ -197,6 +197,7 @@ def run_multicolor_pipeline(
                 }
             else:
                 scene = optimization.scene
+                palette = optimization.palette
                 optimizer_manifest = {
                     "status": "success",
                     "fallback_used": False,
@@ -211,6 +212,7 @@ def run_multicolor_pipeline(
                         list(item) for item in optimization.rejected_tolerances
                     ],
                     "render_rank": asdict(optimization.render_rank),
+                    "stage_timings": [asdict(item) for item in optimization.stage_timings],
                 }
             durations["optimization"] = (time.perf_counter() - optimization_started) * 1000.0
         svg_path = temporary / "output.svg"

@@ -103,7 +103,7 @@
       "limits": {
         "max_iterations": 48,
         "max_evaluations": 1536,
-        "top_k": 5,
+        "top_k": 3,
         "early_stop_patience": 3,
         "minimum_improvement": 1e-06,
         "step_schedule": [

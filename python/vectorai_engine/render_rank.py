@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import tempfile
 from dataclasses import dataclass
@@ -12,7 +13,11 @@ import numpy.typing as npt
 from PIL import Image
 
 from vectorai_bench.external_tools import ToolStatus
-from vectorai_bench.metrics.fidelity import compare_rgba
+from vectorai_bench.metrics.fidelity import (
+    PreparedRGBA,
+    premultiplied_rgba_rmse_prepared,
+    prepare_rgba,
+)
 from vectorai_bench.renderers import ResvgAdapter
 
 from .errors import EngineError, EngineFailure, ErrorCode, Stage
@@ -56,6 +61,7 @@ class RenderRankResult:
     winner_id: str
     scores: tuple[CandidateRenderScore, ...]
     candidate_order: tuple[str, ...]
+    unique_svg_count: int
 
 
 def _failure(message: str) -> EngineFailure:
@@ -92,17 +98,18 @@ def _resize_reference(
     return np.asarray(resized, dtype=np.uint8)
 
 
-def _background_rgb(name: str, width: int, height: int) -> npt.NDArray[np.float64]:
-    if name == "black":
-        return np.zeros((height, width, 3), dtype=np.float64)
-    if name == "white":
-        return np.ones((height, width, 3), dtype=np.float64)
-    if name == "checkerboard":
-        y, x = np.indices((height, width))
-        checks = ((x // 8 + y // 8) % 2).astype(np.float64)
-        values = 0.75 + 0.20 * checks
-        return np.repeat(values[..., None], 3, axis=2)
-    raise ValueError(f"unsupported opaque background: {name}")
+def _composite_lut() -> npt.NDArray[np.uint8]:
+    channels = np.arange(256, dtype=np.float64) / 255.0
+    alpha = channels
+    backgrounds = np.asarray((0.0, 0.75, 0.95, 1.0), dtype=np.float64)
+    values = (
+        channels[None, None, :] * alpha[None, :, None]
+        + backgrounds[:, None, None] * (1.0 - alpha[None, :, None])
+    )
+    return np.rint(np.clip(values, 0.0, 1.0) * 255.0).astype(np.uint8)
+
+
+_OPAQUE_COMPOSITE_LUT = _composite_lut()
 
 
 def _composite(
@@ -111,13 +118,22 @@ def _composite(
 ) -> npt.NDArray[np.uint8]:
     if background == "transparent":
         return rgba
-    values = rgba.astype(np.float64) / 255.0
-    alpha = values[..., 3:4]
-    rgb = values[..., :3] * alpha + _background_rgb(background, rgba.shape[1], rgba.shape[0]) * (
-        1.0 - alpha
-    )
-    opaque = np.concatenate((rgb, np.ones_like(alpha)), axis=2)
-    return np.rint(np.clip(opaque, 0.0, 1.0) * 255.0).astype(np.uint8)
+    if background == "black":
+        opaque_rgb = _OPAQUE_COMPOSITE_LUT[0, rgba[..., 3, None], rgba[..., :3]]
+    elif background == "white":
+        opaque_rgb = _OPAQUE_COMPOSITE_LUT[3, rgba[..., 3, None], rgba[..., :3]]
+    elif background == "checkerboard":
+        y, x = np.indices(rgba.shape[:2])
+        checker_indices = np.asarray(1 + (x // 8 + y // 8) % 2, dtype=np.int64)
+        opaque_rgb = _OPAQUE_COMPOSITE_LUT[
+            checker_indices[..., None],
+            rgba[..., 3, None],
+            rgba[..., :3],
+        ]
+    else:
+        raise ValueError(f"unsupported opaque background: {background}")
+    opaque_alpha = np.full((*rgba.shape[:2], 1), 255, dtype=np.uint8)
+    return np.concatenate((opaque_rgb, opaque_alpha), axis=2)
 
 
 def score_rendered_candidate(
@@ -125,23 +141,30 @@ def score_rendered_candidate(
     reference_by_scale: dict[float, npt.NDArray[np.uint8]],
     rendered_by_scale: dict[float, npt.NDArray[np.uint8]],
     profile: RenderAndRankProfile,
+    prepared_references: dict[tuple[float, str], PreparedRGBA] | None = None,
 ) -> CandidateRenderScore:
     observations: list[ScaleBackgroundScore] = []
+    reference_cache = prepared_references if prepared_references is not None else {}
     for scale in profile.scales:
         reference = reference_by_scale[scale]
         rendered = rendered_by_scale[scale]
         if reference.shape != rendered.shape:
             raise ValueError("reference and candidate render dimensions differ")
         for background in profile.backgrounds:
-            fidelity = compare_rgba(
-                _composite(reference, background),
-                _composite(rendered, background),
+            reference_key = (scale, background)
+            prepared_reference = reference_cache.get(reference_key)
+            if prepared_reference is None:
+                prepared_reference = prepare_rgba(_composite(reference, background))
+                reference_cache[reference_key] = prepared_reference
+            rmse = premultiplied_rgba_rmse_prepared(
+                prepared_reference,
+                prepare_rgba(_composite(rendered, background)),
             )
             observations.append(
                 ScaleBackgroundScore(
                     scale=scale,
                     background=background,
-                    premultiplied_rgba_rmse=fidelity.premultiplied_rgba_rmse,
+                    premultiplied_rgba_rmse=rmse,
                 )
             )
     aggregate = sum(item.premultiplied_rgba_rmse for item in observations) / len(observations)
@@ -199,41 +222,59 @@ def render_and_rank_candidates(
             reference_by_scale[scale] = _resize_reference(
                 reference_rgba, scaled_width, scaled_height
             )
+        rendered_cache: dict[str, dict[float, npt.NDArray[np.uint8]]] = {}
+        score_cache: dict[str, CandidateRenderScore] = {}
+        prepared_references: dict[tuple[float, str], PreparedRGBA] = {}
         for candidate_index, candidate in enumerate(eligible):
-            svg_path = root / f"candidate-{candidate_index:04d}.svg"
-            try:
-                svg_path.write_text(candidate.svg, encoding="utf-8", newline="\n")
-            except OSError as error:
-                raise _failure(f"cannot write render-rank candidate: {error}") from error
-            rendered_by_scale: dict[float, npt.NDArray[np.uint8]] = {}
-            for scale_index, scale in enumerate(profile.scales):
-                scaled_width, scaled_height = dimensions[scale]
-                output_path = root / f"candidate-{candidate_index:04d}-{scale_index}.png"
-                result = adapter.render(
-                    svg_path,
-                    output_path,
-                    width=scaled_width,
-                    height=scaled_height,
-                )
-                if result.status is not ToolStatus.SUCCESS:
-                    raise _failure(
-                        result.message
-                        or f"resvg failed for {candidate.candidate_id} at scale {scale}"
-                    )
+            svg_digest = hashlib.sha256(candidate.svg.encode("utf-8")).hexdigest()
+            rendered_by_scale = rendered_cache.get(svg_digest)
+            if rendered_by_scale is None:
+                svg_path = root / f"candidate-{candidate_index:04d}.svg"
                 try:
-                    with Image.open(output_path) as image:
-                        rendered = np.asarray(image.convert("RGBA"), dtype=np.uint8)
+                    svg_path.write_text(candidate.svg, encoding="utf-8", newline="\n")
                 except OSError as error:
-                    raise _failure(f"cannot read resvg output: {error}") from error
-                rendered_by_scale[scale] = rendered
-            scores.append(
-                score_rendered_candidate(
+                    raise _failure(f"cannot write render-rank candidate: {error}") from error
+                rendered_by_scale = {}
+                for scale_index, scale in enumerate(profile.scales):
+                    scaled_width, scaled_height = dimensions[scale]
+                    output_path = root / f"candidate-{candidate_index:04d}-{scale_index}.png"
+                    result = adapter.render(
+                        svg_path,
+                        output_path,
+                        width=scaled_width,
+                        height=scaled_height,
+                    )
+                    if result.status is not ToolStatus.SUCCESS:
+                        raise _failure(
+                            result.message
+                            or f"resvg failed for {candidate.candidate_id} at scale {scale}"
+                        )
+                    try:
+                        with Image.open(output_path) as image:
+                            rendered = np.asarray(image.convert("RGBA"), dtype=np.uint8)
+                    except OSError as error:
+                        raise _failure(f"cannot read resvg output: {error}") from error
+                    rendered_by_scale[scale] = rendered
+                rendered_cache[svg_digest] = rendered_by_scale
+            cached_score = score_cache.get(svg_digest)
+            if cached_score is None:
+                candidate_score = score_rendered_candidate(
                     candidate,
                     reference_by_scale,
                     rendered_by_scale,
                     profile,
+                    prepared_references,
                 )
-            )
+                score_cache[svg_digest] = candidate_score
+            else:
+                candidate_score = CandidateRenderScore(
+                    candidate_id=candidate.candidate_id,
+                    aggregate_rmse=cached_score.aggregate_rmse,
+                    node_count=candidate.node_count,
+                    objective_score=candidate.objective_score,
+                    observations=cached_score.observations,
+                )
+            scores.append(candidate_score)
     best_rmse = min(item.aggregate_rmse for item in scores)
 
     def rank_key(item: CandidateRenderScore) -> tuple[int, float, float, float, str]:
@@ -258,4 +299,5 @@ def render_and_rank_candidates(
         winner_id=ranked[0].candidate_id,
         scores=ranked,
         candidate_order=tuple(candidate.candidate_id for candidate in eligible),
+        unique_svg_count=len(rendered_cache),
     )

@@ -1,5 +1,6 @@
 """Public native-engine boundary and deterministic preprocessing API."""
 
+from .continuous_scene import PaletteColorRefinement, refine_palette_colors
 from .decode import DecodeLimits, SourceImage, decode_bytes, decode_path
 from .errors import EngineError, EngineFailure, ErrorCode, RunStatus, Stage
 from .junctions import (
@@ -195,6 +196,7 @@ __all__ = [
     "OptimizationStatus",
     "OptimizerProfileSet",
     "PaletteColor",
+    "PaletteColorRefinement",
     "PaletteConfig",
     "PaletteHypothesis",
     "PaletteResult",
@@ -276,6 +278,7 @@ __all__ = [
     "optimize_parameters",
     "primitive_parameter_block",
     "recover_closed_primitives",
+    "refine_palette_colors",
     "render_and_rank_candidates",
     "run_binary_pipeline",
     "run_multicolor_pipeline",

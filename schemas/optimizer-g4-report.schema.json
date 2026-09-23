@@ -43,7 +43,8 @@
         "fidelity_improvement",
         "node_advantage",
         "baseline_runtime_ms",
-        "optimized_runtime_ms"
+        "optimized_runtime_ms",
+        "optimizer_stage_ms"
       ],
       "properties": {
         "case_id": {"type": "string", "minLength": 1},
@@ -56,7 +57,12 @@
         "fidelity_improvement": {"type": "number", "minimum": -1, "maximum": 1},
         "node_advantage": {"type": "number", "minimum": -1, "maximum": 1},
         "baseline_runtime_ms": {"type": "number", "minimum": 0},
-        "optimized_runtime_ms": {"type": "number", "minimum": 0}
+        "optimized_runtime_ms": {"type": "number", "minimum": 0},
+        "optimizer_stage_ms": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0},
+          "required": ["scene_selection", "export_editability", "objective", "render_rank", "total"]
+        }
       }
     },
     "evaluation": {

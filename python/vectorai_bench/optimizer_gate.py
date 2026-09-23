@@ -29,6 +29,7 @@ class OptimizerCaseMeasurement:
     node_advantage: float
     baseline_runtime_ms: float
     optimized_runtime_ms: float
+    optimizer_stage_ms: dict[str, float]
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,12 +92,19 @@ def _percentile_95(values: list[float]) -> float:
     return ordered[index]
 
 
-def _semantic_digest(
+def optimizer_semantic_digest(
     measurements: list[OptimizerCaseMeasurement],
     evaluation: OptimizerGateEvaluation,
     profile_set_sha256: str,
     profile_sha256: str,
 ) -> str:
+    evaluation_projection = asdict(evaluation)
+    evaluation_projection.pop("passed")
+    evaluation_projection.pop("optimized_runtime_p95_ms")
+    criteria = cast(dict[str, bool], evaluation_projection["criteria"])
+    evaluation_projection["criteria"] = {
+        key: value for key, value in criteria.items() if key != "runtime_p95_within_20s"
+    }
     projection = {
         "schema_version": "1.0.0",
         "profile_set_sha256": profile_set_sha256,
@@ -105,15 +113,16 @@ def _semantic_digest(
             {
                 key: value
                 for key, value in asdict(item).items()
-                if key not in {"baseline_runtime_ms", "optimized_runtime_ms"}
+                if key
+                not in {
+                    "baseline_runtime_ms",
+                    "optimized_runtime_ms",
+                    "optimizer_stage_ms",
+                }
             }
             for item in measurements
         ],
-        "evaluation": {
-            key: value
-            for key, value in asdict(evaluation).items()
-            if key != "optimized_runtime_p95_ms"
-        },
+        "evaluation": evaluation_projection,
     }
     payload = json.dumps(
         projection,
@@ -230,6 +239,11 @@ def run_optimizer_gate(
         )
         baseline_rmse = score_by_id[baseline_id]
         optimized_rmse = score_by_id[winner_id]
+        timing_items = cast(list[dict[str, Any]], optimizer_payload["stage_timings"])
+        optimizer_stage_ms = {
+            str(item["stage"]): _finite_float(item["duration_ms"], "optimizer stage timing")
+            for item in timing_items
+        }
         measurements.append(
             OptimizerCaseMeasurement(
                 case_id=case.case_id,
@@ -248,6 +262,7 @@ def run_optimizer_gate(
                 optimized_runtime_ms=_finite_float(
                     optimized_manifest["total_duration_ms"], "optimized runtime"
                 ),
+                optimizer_stage_ms=optimizer_stage_ms,
             )
         )
     evaluation = evaluate_optimizer_g4(measurements)
@@ -257,7 +272,7 @@ def run_optimizer_gate(
         "mode": mode.value,
         "profile_set_sha256": profile_set.sha256,
         "profile_sha256": profile.sha256,
-        "semantic_digest": _semantic_digest(
+        "semantic_digest": optimizer_semantic_digest(
             measurements,
             evaluation,
             profile_set.sha256,
