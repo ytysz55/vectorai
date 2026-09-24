@@ -75,6 +75,18 @@ def test_disconnected_same_palette_entries_are_distinct_faces() -> None:
     assert graph.faces[1].pixel_count == graph.faces[2].pixel_count == 6
 
 
+def test_validator_rejects_negative_indices_and_corrupt_ownership() -> None:
+    labels = np.zeros((3, 3), dtype=np.int16)
+    graph = build_multicolor_region_graph(segmentation(labels))
+    edges = (replace(graph.half_edges[0], origin=-1), *graph.half_edges[1:])
+    broken = replace(graph, half_edges=edges)
+    with pytest.raises(EngineFailure):
+        validate_multicolor_region_graph(broken)
+    broken_adjacency = replace(graph, shared_boundary_lengths={})
+    with pytest.raises(EngineFailure):
+        validate_multicolor_region_graph(broken_adjacency)
+
+
 def test_validator_rejects_broken_twin() -> None:
     labels = np.zeros((3, 3), dtype=np.int16)
     graph = build_multicolor_region_graph(segmentation(labels))

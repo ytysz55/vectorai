@@ -321,24 +321,37 @@ def validate_multicolor_region_graph(graph: MulticolorRegionGraph) -> None:
         )
     ):
         raise _graph_failure("region graph dimensions are invalid")
-    if len(graph.half_edges) != graph.canonical_edge_count * 2:
+    if graph.canonical_edge_count < 0 or len(graph.half_edges) != graph.canonical_edge_count * 2:
         raise _graph_failure("canonical edge count does not match twin pairs")
+    if tuple(face.face_id for face in graph.faces) != tuple(range(len(graph.faces))):
+        raise _graph_failure("face identifiers are not contiguous")
     canonical_counts = [0] * graph.canonical_edge_count
+    predecessor_counts = [0] * len(graph.half_edges)
+    adjacency_lengths: dict[tuple[int, int], int] = {}
+    outgoing: list[list[int]] = [[] for _ in graph.vertices]
     for index, vertex in enumerate(graph.vertices):
-        if vertex.vertex_id != index:
-            raise _graph_failure("vertex identifiers are not contiguous")
+        if (
+            vertex.vertex_id != index
+            or not 0 <= vertex.position.x <= graph.width
+            or not 0 <= vertex.position.y <= graph.height
+        ):
+            raise _graph_failure("vertex identifiers or coordinates are invalid")
         for edge_id in vertex.outgoing_half_edges:
-            if edge_id >= len(graph.half_edges) or graph.half_edges[edge_id].origin != index:
+            if (
+                not 0 <= edge_id < len(graph.half_edges)
+                or graph.half_edges[edge_id].origin != index
+            ):
                 raise _graph_failure("vertex outgoing relation is invalid")
     for index, edge in enumerate(graph.half_edges):
         if (
             edge.half_edge_id != index
-            or edge.origin >= len(graph.vertices)
-            or edge.target >= len(graph.vertices)
-            or edge.twin >= len(graph.half_edges)
-            or edge.next >= len(graph.half_edges)
-            or edge.face >= len(graph.faces)
-            or edge.canonical_edge >= graph.canonical_edge_count
+            or not 0 <= edge.origin < len(graph.vertices)
+            or not 0 <= edge.target < len(graph.vertices)
+            or not 0 <= edge.twin < len(graph.half_edges)
+            or not 0 <= edge.next < len(graph.half_edges)
+            or not 0 <= edge.face < len(graph.faces)
+            or not 0 <= edge.canonical_edge < graph.canonical_edge_count
+            or edge.origin == edge.target
         ):
             raise _graph_failure("half-edge relation is out of range")
         twin = graph.half_edges[edge.twin]
@@ -354,10 +367,27 @@ def validate_multicolor_region_graph(graph: MulticolorRegionGraph) -> None:
         if following.face != edge.face or following.origin != edge.target:
             raise _graph_failure("half-edge next invariant failed")
         canonical_counts[edge.canonical_edge] += 1
+        predecessor_counts[edge.next] += 1
+        outgoing[edge.origin].append(edge.half_edge_id)
+        if edge.half_edge_id < edge.twin:
+            pair = (min(edge.face, twin.face), max(edge.face, twin.face))
+            adjacency_lengths[pair] = adjacency_lengths.get(pair, 0) + 1
+    if any(
+        tuple(sorted(edges)) != vertex.outgoing_half_edges
+        for edges, vertex in zip(outgoing, graph.vertices, strict=True)
+    ):
+        raise _graph_failure("vertex outgoing relation is incomplete")
+    if any(count != 1 for count in predecessor_counts):
+        raise _graph_failure("half-edge predecessor relation is not unique")
+    if graph.shared_boundary_lengths != adjacency_lengths:
+        raise _graph_failure("shared boundary lengths disagree with canonical edge ownership")
+    if graph.adjacency != frozenset(pair for pair in adjacency_lengths if 0 not in pair):
+        raise _graph_failure("adjacency disagrees with canonical edge ownership")
     if any(count != 2 for count in canonical_counts):
         raise _graph_failure("canonical edge does not have exactly two half-edges")
 
     visited: set[int] = set()
+    cycle_starts_by_face: dict[int, list[int]] = {index: [] for index in range(len(graph.faces))}
     for start in range(len(graph.half_edges)):
         if start in visited:
             continue
@@ -371,3 +401,31 @@ def validate_multicolor_region_graph(graph: MulticolorRegionGraph) -> None:
             current = graph.half_edges[current].next
         if current != start:
             raise _graph_failure("cycle traversal did not close")
+        cycle_starts_by_face[graph.half_edges[start].face].append(min(local))
+    for face in graph.faces:
+        if (
+            tuple(sorted(cycle_starts_by_face[face.face_id])) != face.boundary_cycles
+            or face.hole_count != max(0, len(face.boundary_cycles) - 1)
+        ):
+            raise _graph_failure("face boundary cycles disagree with half-edge traversal")
+    neighbors: list[set[int]] = [set() for _ in graph.vertices]
+    for edge in graph.half_edges:
+        neighbors[edge.origin].add(edge.target)
+    components = 0
+    visited_vertices: set[int] = set()
+    for start in range(len(graph.vertices)):
+        if start in visited_vertices:
+            continue
+        components += 1
+        stack = [start]
+        while stack:
+            current = stack.pop()
+            if current in visited_vertices:
+                continue
+            visited_vertices.add(current)
+            stack.extend(sorted(neighbors[current] - visited_vertices, reverse=True))
+    # Region IDs merge disconnected exterior/hole cells; half-edge boundary
+    # cycles, rather than region IDs, are the embedding's planar faces.
+    cycle_count = sum(len(starts) for starts in cycle_starts_by_face.values())
+    if len(graph.vertices) - graph.canonical_edge_count + cycle_count != 2 * components:
+        raise _graph_failure("planar graph Euler invariant failed")

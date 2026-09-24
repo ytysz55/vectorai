@@ -27,6 +27,8 @@ from .profiles import OptimizationMode, load_optimizer_profiles
 from .reliability import analyze_reliability
 from .segmentation import SpatialSegmentationConfig, segment_multicolor
 from .shared_boundary import assemble_shared_boundaries, measure_renderer_seams
+from .topology_validation import raise_for_validation, validate_multicolor_output
+from .validation_report import geometry_validation_report
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +53,7 @@ class MulticolorPipelineBundle:
     preview_path: Path
     manifest_path: Path
     scene_path: Path
+    validation_path: Path
     final_status: RunStatus
 
 
@@ -215,10 +218,22 @@ def run_multicolor_pipeline(
                     "stage_timings": [asdict(item) for item in optimization.stage_timings],
                 }
             durations["optimization"] = (time.perf_counter() - optimization_started) * 1000.0
+        geometry_result = validate_multicolor_output(graph, assembly, scene)
+        raise_for_validation(geometry_result)
         svg_path = temporary / "output.svg"
         export_started = time.perf_counter()
         _, scene_manifest = export_multicolor_svg(scene, palette, svg_path)
         durations["export"] = (time.perf_counter() - export_started) * 1000.0
+        validation_path = temporary / "validation-report.json"
+        _write_json(
+            validation_path,
+            geometry_validation_report(
+                geometry_result,
+                job_id=f"multicolor-{source_sha256[:16]}",
+                source_sha256=source_sha256,
+                svg_bytes=svg_path.read_bytes(),
+            ),
+        )
         scene_path = temporary / "scene.json"
         foreground_topology = analyze_binary_mask(palette.selected.labels >= 0)
         _write_json(
@@ -327,7 +342,7 @@ def run_multicolor_pipeline(
         )
         final_status = (
             RunStatus.NEEDS_REVIEW
-            if gap_rate > 0.0
+            if gap_rate > 0.0 or geometry_result.needs_review
             else RunStatus.DEGRADED
             if optimizer_degraded
             else RunStatus.SUCCESS
@@ -378,6 +393,7 @@ def run_multicolor_pipeline(
                     _artifact(svg_path, temporary, "image/svg+xml"),
                     _artifact(preview_path, temporary, "image/png"),
                     _artifact(scene_path, temporary, "application/json"),
+                    _artifact(validation_path, temporary, "application/json"),
                     *(_artifact(path, temporary, "image/png") for path in auxiliary_artifacts),
                 ],
                 "total_duration_ms": (time.perf_counter() - started) * 1000.0,
@@ -390,6 +406,7 @@ def run_multicolor_pipeline(
             preview_path=output_directory / preview_path.name,
             manifest_path=output_directory / manifest_path.name,
             scene_path=output_directory / scene_path.name,
+            validation_path=output_directory / validation_path.name,
             final_status=final_status,
         )
     except Exception:

@@ -39,6 +39,8 @@ from .stroke_selection import (
     arbitrate_fill_stroke,
     candidate_score,
 )
+from .topology_validation import raise_for_validation, validate_centerline_graph
+from .validation_report import geometry_validation_report
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +65,7 @@ class StrokePipelineBundle:
     cut_outline_path: Path
     scene_path: Path
     manifest_path: Path
+    validation_path: Path
     final_status: RunStatus
 
 
@@ -202,6 +205,8 @@ def run_stroke_pipeline(
     graph = build_centerline_graph(mask, minimum_spur_length=config.minimum_spur_length)
     if not graph.edges:
         raise _failure(ErrorCode.STROKE_AMBIGUOUS, Stage.STROKE, "stroke graph has no edges")
+    geometry_result = validate_centerline_graph(graph)
+    raise_for_validation(geometry_result)
     profile = estimate_width_profile(mask, graph)
     width_model = select_width_model(
         profile,
@@ -338,6 +343,16 @@ def run_stroke_pipeline(
         preview_path = temporary / "preview.png"
         shutil.copy2(selected_svg, svg_path)
         shutil.copy2(selected_preview, preview_path)
+        validation_path = temporary / "validation-report.json"
+        _write_json(
+            validation_path,
+            geometry_validation_report(
+                geometry_result,
+                job_id=f"stroke-{source_sha256[:16]}",
+                source_sha256=source_sha256,
+                svg_bytes=svg_path.read_bytes(),
+            ),
+        )
         scene_path = temporary / "scene.json"
         _write_json(
             scene_path,
@@ -386,6 +401,7 @@ def run_stroke_pipeline(
                     "preview.png",
                     "cut-outline.svg",
                     "scene.json",
+                    "validation-report.json",
                 ],
                 "total_duration_ms": (time.perf_counter() - started) * 1000.0,
             },
@@ -398,6 +414,7 @@ def run_stroke_pipeline(
             output_directory / cut_outline_path.name,
             output_directory / scene_path.name,
             output_directory / manifest_path.name,
+            output_directory / validation_path.name,
             arbitration.status,
         )
     except Exception:

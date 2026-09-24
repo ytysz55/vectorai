@@ -80,10 +80,14 @@ def test_multicolor_pipeline_writes_atomic_scene_bundle(tmp_path: Path) -> None:
     assert scene["graph"]["face_count"] == 3
     assert len(scene["shared_boundaries"]["seam_pairs"]) == 2
     assert manifest["final_status"] == "success"
+    validation = json.loads(bundle.validation_path.read_text(encoding="utf-8"))
+    assert validation["status"] == "passed"
+    assert validation["summary"]["hard_failures"] == 0
     assert {artifact["name"] for artifact in manifest["artifacts"]} == {
         "output.svg",
         "preview.png",
         "scene.json",
+        "validation-report.json",
     }
 
 
@@ -211,6 +215,7 @@ def test_pipeline_records_required_three_renderer_seam_matrix(tmp_path: Path) ->
         "preview-chromium.png",
         "preview-inkscape.png",
         "scene.json",
+        "validation-report.json",
     }
 
 

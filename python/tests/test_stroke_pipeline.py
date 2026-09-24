@@ -50,6 +50,9 @@ def test_stroke_pipeline_writes_arbitrated_bundle(tmp_path: Path) -> None:
     assert bundle.svg_path.is_file()
     assert bundle.preview_path.is_file()
     assert bundle.cut_outline_path.is_file()
+    validation = json.loads(bundle.validation_path.read_text(encoding="utf-8"))
+    assert validation["status"] == "passed"
+    assert validation["summary"]["hard_failures"] == 0
     scene = json.loads(bundle.scene_path.read_text(encoding="utf-8"))
     manifest = json.loads(bundle.manifest_path.read_text(encoding="utf-8"))
     assert scene["routing"]["selected"] == "stroke"
@@ -58,3 +61,4 @@ def test_stroke_pipeline_writes_arbitrated_bundle(tmp_path: Path) -> None:
     assert any(item["kind"] == "fill" for item in scene["arbitration"]["ranked"])
     assert any(item["kind"] == "stroke" for item in scene["arbitration"]["ranked"])
     assert manifest["best_stroke_candidate"].startswith("stroke-")
+    assert "validation-report.json" in manifest["artifacts"]
