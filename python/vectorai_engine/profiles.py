@@ -16,6 +16,7 @@ from typing import cast
 from .objectives import OBJECTIVE_NORMALIZATION_VERSION, TERM_NAMES
 
 PROFILE_SCHEMA_VERSION = "1.0.0"
+OPTIMIZER_PROFILE_PATH = Path(__file__).with_name("optimizer-profiles-v1.json")
 _SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 _EXPECTED_SCALES = (0.5, 1.0, 2.0, 4.0)
 _EXPECTED_BACKGROUNDS = ("transparent", "black", "white", "checkerboard")

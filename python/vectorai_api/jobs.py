@@ -115,6 +115,7 @@ class JobManager:
         resvg_command_prefix: tuple[str, ...] | None,
         max_job_seconds: float,
         max_queued_jobs: int = 2,
+        optimizer_profile_path: Path | None = None,
     ) -> None:
         if max_job_seconds <= 0:
             raise ValueError("max_job_seconds must be positive")
@@ -124,6 +125,11 @@ class JobManager:
         self.root.mkdir(parents=True, exist_ok=True)
         self.resvg_executable = resvg_executable.resolve() if resvg_executable else None
         self.resvg_command_prefix = resvg_command_prefix
+        if optimizer_profile_path is not None and not optimizer_profile_path.is_file():
+            raise ValueError("optimizer profile file is unavailable")
+        self.optimizer_profile_path = (
+            optimizer_profile_path.resolve() if optimizer_profile_path is not None else None
+        )
         self.max_job_seconds = max_job_seconds
         self.max_queued_jobs = max_queued_jobs
         self.lock = threading.RLock()
@@ -230,8 +236,15 @@ class JobManager:
         mode: str,
         idempotency_key: str | None = None,
     ) -> dict[str, object]:
-        if input_name not in {"input.png", "input.jpg"} or mode not in {"geometric", "stroke"}:
+        if input_name not in {"input.png", "input.jpg"} or mode not in {
+            "faithful",
+            "geometric",
+            "minimal",
+            "stroke",
+        }:
             raise ValueError("unsupported job input or mode")
+        if mode in {"faithful", "minimal"} and self.optimizer_profile_path is None:
+            raise ValueError("optimizer profile is unavailable for this mode")
         source_hash = hashlib.sha256(payload).hexdigest()
         key_hash: str | None = None
         fingerprint = hashlib.sha256(f"{source_hash}\0{mode}\0{input_name}".encode()).hexdigest()
@@ -270,6 +283,11 @@ class JobManager:
                         "resvg_command_prefix": list(self.resvg_command_prefix)
                         if self.resvg_command_prefix
                         else None,
+                        "optimizer_profile_path": (
+                            str(self.optimizer_profile_path)
+                            if self.optimizer_profile_path is not None
+                            else None
+                        ),
                     },
                 )
                 record: dict[str, object] = {

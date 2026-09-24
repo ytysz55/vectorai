@@ -9,7 +9,7 @@
     "schema_version": { "const": "1.0.0" },
     "job_id": { "type": "string", "pattern": "^[a-f0-9]{64}-[a-f0-9]{12}$" },
     "state": { "enum": ["accepted", "running", "success", "degraded", "needs_review", "unsupported", "failed", "canceled"] },
-    "mode": { "enum": ["geometric", "stroke"] },
+    "mode": { "enum": ["faithful", "geometric", "minimal", "stroke"] },
     "input_sha256": { "$ref": "#/$defs/sha256" },
     "config_sha256": { "$ref": "#/$defs/sha256" },
     "engine_build_id": { "type": ["string", "null"] },

@@ -101,7 +101,7 @@ def test_job_upload_status_cancel_and_artifact_contract(tmp_path: Path) -> None:
         unsupported, body, _ = request(
             f"{base}/v1/jobs",
             body=image_bytes(),
-            headers={**headers, "x-vectorai-mode": "faithful"},
+            headers={**headers, "x-vectorai-mode": "unknown"},
         )
         assert unsupported == 400
         assert json.loads(body)["detail"]["code"] == "UNSUPPORTED_INPUT"

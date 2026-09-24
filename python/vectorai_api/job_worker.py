@@ -12,6 +12,7 @@ from typing import cast
 
 from vectorai_engine.errors import EngineFailure
 from vectorai_engine.multicolor_pipeline import MulticolorPipelineConfig, run_multicolor_pipeline
+from vectorai_engine.profiles import OptimizationMode
 from vectorai_engine.stroke_pipeline import StrokePipelineConfig, run_stroke_pipeline
 
 
@@ -32,9 +33,10 @@ def run_worker(job_directory: Path) -> int:
         name = data.get("input_name")
         executable = data.get("resvg_executable")
         prefix = data.get("resvg_command_prefix")
+        profile_value = data.get("optimizer_profile_path")
         if (
             not isinstance(mode, str)
-            or mode not in {"geometric", "stroke"}
+            or mode not in {"faithful", "geometric", "minimal", "stroke"}
             or not isinstance(name, str)
             or name not in {"input.png", "input.jpg"}
         ):
@@ -47,6 +49,11 @@ def run_worker(job_directory: Path) -> int:
             or not all(isinstance(item, str) for item in cast(list[object], prefix))
         ):
             raise ValueError("invalid renderer command")
+        if profile_value is not None and not isinstance(profile_value, str):
+            raise ValueError("invalid optimizer profile location")
+        profile_path = Path(profile_value) if isinstance(profile_value, str) else None
+        if mode in {"faithful", "minimal"} and (profile_path is None or not profile_path.is_file()):
+            raise ValueError("requested mode requires a pinned optimizer profile")
         command = tuple(cast(list[str], prefix)) if prefix is not None else None
         renderer = Path(executable) if isinstance(executable, str) else None
         source = job_directory / name
@@ -66,7 +73,12 @@ def run_worker(job_directory: Path) -> int:
             multicolor_bundle = run_multicolor_pipeline(
                 source,
                 output,
-                MulticolorPipelineConfig(resvg_executable=renderer, resvg_command_prefix=command),
+                MulticolorPipelineConfig(
+                    resvg_executable=renderer,
+                    resvg_command_prefix=command,
+                    optimizer_profile_path=profile_path if mode != "geometric" else None,
+                    optimizer_mode=OptimizationMode(mode),
+                ),
             )
             scene = json.loads(multicolor_bundle.scene_path.read_text(encoding="utf-8"))
             manifest = json.loads(multicolor_bundle.manifest_path.read_text(encoding="utf-8"))

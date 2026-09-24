@@ -31,6 +31,7 @@ from vectorai_engine.multicolor_pipeline import (
     MulticolorPipelineConfig,
     run_multicolor_pipeline,
 )
+from vectorai_engine.profiles import OPTIMIZER_PROFILE_PATH
 from vectorai_engine.stroke_pipeline import StrokePipelineConfig, run_stroke_pipeline
 
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
@@ -55,6 +56,7 @@ class ApiSettings:
     max_job_seconds: float = 180.0
     max_queued_jobs: int = 2
     max_parallel_uploads: int = 3
+    optimizer_profile_path: Path | None = OPTIMIZER_PROFILE_PATH
 
 
 class ErrorPayload(TypedDict):
@@ -143,6 +145,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         resvg_command_prefix=settings.resvg_command_prefix,
         max_job_seconds=settings.max_job_seconds,
         max_queued_jobs=settings.max_queued_jobs,
+        optimizer_profile_path=settings.optimizer_profile_path,
     )
 
     upload_lock = threading.Lock()
@@ -302,8 +305,10 @@ def create_app(settings: ApiSettings) -> FastAPI:
         if content_type not in {"image/png", "image/jpeg"}:
             raise _job_http(415, "UNSUPPORTED_INPUT", "Only PNG and JPEG are supported.")
         mode = request.headers.get("x-vectorai-mode", "geometric").lower()
-        if mode not in {"geometric", "stroke"}:
-            raise _job_http(400, "UNSUPPORTED_INPUT", "Select geometric or stroke mode.")
+        if mode not in {"faithful", "geometric", "minimal", "stroke"}:
+            raise _job_http(400, "UNSUPPORTED_INPUT", "Unknown vectorization mode.")
+        if mode in {"faithful", "minimal"} and settings.optimizer_profile_path is None:
+            raise _job_http(400, "UNSUPPORTED_INPUT", "Optimizer profiles are unavailable.")
         try:
             source = await bounded_upload(request)
         except HTTPException as error:
@@ -340,7 +345,9 @@ def create_app(settings: ApiSettings) -> FastAPI:
                 409, "IDEMPOTENCY_CONFLICT", "Key is bound to a different request."
             ) from error
         except ValueError as error:
-            raise _job_http(400, "UNSUPPORTED_INPUT", "Invalid idempotency key.") from error
+            raise _job_http(
+                400, "UNSUPPORTED_INPUT", "Invalid job mode or idempotency key."
+            ) from error
         except JobBusyError as error:
             raise _job_http(
                 429,

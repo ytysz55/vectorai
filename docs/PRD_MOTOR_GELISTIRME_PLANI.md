@@ -1167,6 +1167,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [x] **ADR-017:** Local observability ve privacy — `docs/adr/ADR-017-local-observability-and-privacy.md`.
 - [x] **ADR-018:** Lokal job process supervision ve fail-closed publication — `docs/adr/ADR-018-local-job-supervision.md`.
 - [x] **ADR-019:** Bounded FIFO queue ve özel idempotency indeksi — `docs/adr/ADR-019-idempotent-local-queue.md`.
+- [x] **ADR-020:** E7 optimized job mode ve lokal UI sınırı — `docs/adr/ADR-020-e7-optimized-job-modes.md`.
 
 Her ADR; bağlam, seçenekler, karar, gerekçe, benchmark kanıtı, sonuçlar ve geri dönüş maliyeti içerir.
 
@@ -1469,10 +1470,10 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **API-002 — Idempotency ve resource queue** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Aynı anahtar duplicate iş üretmez; limit aşımı typed error. Ham anahtar kaydedilmeden SHA-256/fingerprint özel yan dosyası tekrar başlatmada da eşleşir; farklı talep `409`, dolu FIFO/limitli upload `429`, bozuk indeks keyed admission için `503` üretir. Tek API instance + bir worker/iki bekleyen iş varsayılandır; otomatik retention, multi-process kilidi ve OS RAM sandbox'ı kapsam dışıdır.
 
-**E7 API kanıtı:** Job/queue/cancel/restart/CORS/symlink ve kilitli şema fixture testleriyle `245` Python testi, Ruff, mypy ve mevcut web build geçti. API-001/002 tamam; UI-001 için `faithful`/`minimal` profil kablolaması ve polling/cancel arayüzü henüz uygulanmadı. Native CTest bu ortamda bulunmadığı için bu E7 değişiklikleri için tekrar çalıştırılamadı.
+**E7 API/UI kanıtı:** Job/queue/cancel/restart/CORS/symlink, dört modun pinned profile routing'i ve kilitli şema fixture testleriyle `250` Python testi; Ruff, mypy, web type-check/build ve dört web durum/artefact birim testi geçti. API-001/002 ve UI-001 tamamlandı. Tarayıcı E2E ve paketlenmiş wheel JSON resource doğrulaması henüz yapılmadı; native CTest bu ortamda bulunmadığı için E7 değişiklikleri için tekrar çalıştırılamadı.
 
-- [ ] **UI-001 — Upload, mode ve job status** — P1, 2 gün, bağımlılık: API-001
-  - **Kabul:** Dört mode ve bütün final statüler doğru görünür.
+- [x] **UI-001 — Upload, mode ve job status** — P1, 2 gün, bağımlılık: API-001
+  - **Kabul:** Dört mode gerçek pipeline'a bağlandı: faithful/minimal farklı kilitli optimizer profilleri, geometric hızlı temel akış, stroke line-art. UI `/v1/jobs` üzerinden upload/poll/cancel, typed error ve bütün final statüleri gösterir; yalnız doğrulanmış success/degraded/needs_review dosyaları yayınlanır. Üçüncü taraf font çağrısı kaldırıldı; kayıp upload yanıtında aynı istek anahtarı yeniden kullanılır.
 
 - [ ] **UI-002 — Before/after ve baseline karşılaştırması** — P1, 2 gün, bağımlılık: UI-001
   - **Kabul:** Zoom/pan koordinatları source/SVG ile hizalı.

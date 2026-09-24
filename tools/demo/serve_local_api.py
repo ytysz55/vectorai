@@ -8,6 +8,7 @@ from pathlib import Path
 import uvicorn  # type: ignore[import-not-found, unused-ignore]
 
 from vectorai_api.app import ApiSettings, create_app
+from vectorai_engine.profiles import OPTIMIZER_PROFILE_PATH
 
 
 def main() -> int:
@@ -17,6 +18,7 @@ def main() -> int:
     parser.add_argument("--jobs-dir", type=Path, default=Path("out/local-api-jobs"))
     parser.add_argument("--max-queued-jobs", type=int, default=2)
     parser.add_argument("--max-parallel-uploads", type=int, default=3)
+    parser.add_argument("--optimizer-profiles", type=Path, default=OPTIMIZER_PROFILE_PATH)
     parser.add_argument("--job-timeout-seconds", type=float, default=180.0)
     parser.add_argument("--host", choices=("127.0.0.1", "::1"), default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
@@ -38,6 +40,7 @@ def main() -> int:
             resvg_command_prefix=tuple(args.resvg_command) if args.resvg_command else None,
             max_queued_jobs=args.max_queued_jobs,
             max_parallel_uploads=args.max_parallel_uploads,
+            optimizer_profile_path=args.optimizer_profiles,
             max_job_seconds=args.job_timeout_seconds,
         )
     )

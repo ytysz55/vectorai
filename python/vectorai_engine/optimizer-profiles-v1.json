@@ -1,0 +1,184 @@
+{
+  "schema_version": "1.0.0",
+  "normalization_version": "1.0.0",
+  "profiles": [
+    {
+      "profile_version": "1.0.0",
+      "mode": "faithful",
+      "weights": {
+        "fidelity": 0.55,
+        "boundary": 0.25,
+        "complexity": 0.05,
+        "regularization": 0.05,
+        "color": 0.1
+      },
+      "limits": {
+        "max_iterations": 32,
+        "max_evaluations": 1024,
+        "top_k": 5,
+        "early_stop_patience": 2,
+        "minimum_improvement": 1e-06,
+        "step_schedule": [
+          1.0,
+          0.5,
+          0.25,
+          0.125
+        ],
+        "max_vertex_delta_px": 1.5,
+        "max_primitive_delta_px": 1.5,
+        "max_color_delta": 0.06,
+        "max_width_delta_px": 1.0,
+        "minimum_positive_geometry": 0.01
+      },
+      "render_and_rank": {
+        "scales": [
+          0.5,
+          1.0,
+          2.0,
+          4.0
+        ],
+        "backgrounds": [
+          "transparent",
+          "black",
+          "white",
+          "checkerboard"
+        ],
+        "fidelity_band": 0.0005
+      }
+    },
+    {
+      "profile_version": "1.0.0",
+      "mode": "geometric",
+      "weights": {
+        "fidelity": 0.35,
+        "boundary": 0.3,
+        "complexity": 0.1,
+        "regularization": 0.2,
+        "color": 0.05
+      },
+      "limits": {
+        "max_iterations": 40,
+        "max_evaluations": 1280,
+        "top_k": 5,
+        "early_stop_patience": 2,
+        "minimum_improvement": 1e-06,
+        "step_schedule": [
+          1.0,
+          0.5,
+          0.25,
+          0.125
+        ],
+        "max_vertex_delta_px": 2.0,
+        "max_primitive_delta_px": 2.0,
+        "max_color_delta": 0.08,
+        "max_width_delta_px": 1.5,
+        "minimum_positive_geometry": 0.01
+      },
+      "render_and_rank": {
+        "scales": [
+          0.5,
+          1.0,
+          2.0,
+          4.0
+        ],
+        "backgrounds": [
+          "transparent",
+          "black",
+          "white",
+          "checkerboard"
+        ],
+        "fidelity_band": 0.002
+      }
+    },
+    {
+      "profile_version": "1.0.0",
+      "mode": "minimal",
+      "weights": {
+        "fidelity": 0.25,
+        "boundary": 0.15,
+        "complexity": 0.45,
+        "regularization": 0.1,
+        "color": 0.05
+      },
+      "limits": {
+        "max_iterations": 48,
+        "max_evaluations": 1536,
+        "top_k": 3,
+        "early_stop_patience": 3,
+        "minimum_improvement": 1e-06,
+        "step_schedule": [
+          1.5,
+          1.0,
+          0.5,
+          0.25,
+          0.15,
+          0.125
+        ],
+        "max_vertex_delta_px": 3.0,
+        "max_primitive_delta_px": 3.0,
+        "max_color_delta": 0.1,
+        "max_width_delta_px": 2.0,
+        "minimum_positive_geometry": 0.01
+      },
+      "render_and_rank": {
+        "scales": [
+          0.5,
+          1.0,
+          2.0,
+          4.0
+        ],
+        "backgrounds": [
+          "transparent",
+          "black",
+          "white",
+          "checkerboard"
+        ],
+        "fidelity_band": 0.01
+      }
+    },
+    {
+      "profile_version": "1.0.0",
+      "mode": "cut_ready",
+      "weights": {
+        "fidelity": 0.3,
+        "boundary": 0.25,
+        "complexity": 0.15,
+        "regularization": 0.25,
+        "color": 0.05
+      },
+      "limits": {
+        "max_iterations": 32,
+        "max_evaluations": 1024,
+        "top_k": 5,
+        "early_stop_patience": 2,
+        "minimum_improvement": 1e-06,
+        "step_schedule": [
+          0.75,
+          0.5,
+          0.25,
+          0.125
+        ],
+        "max_vertex_delta_px": 1.0,
+        "max_primitive_delta_px": 1.0,
+        "max_color_delta": 0.04,
+        "max_width_delta_px": 0.75,
+        "minimum_positive_geometry": 0.1
+      },
+      "render_and_rank": {
+        "scales": [
+          0.5,
+          1.0,
+          2.0,
+          4.0
+        ],
+        "backgrounds": [
+          "transparent",
+          "black",
+          "white",
+          "checkerboard"
+        ],
+        "fidelity_band": 0.001
+      }
+    }
+  ]
+}

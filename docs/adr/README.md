@@ -26,3 +26,4 @@ Statuses: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
 - [`ADR-017-local-observability-and-privacy.md`](ADR-017-local-observability-and-privacy.md)
 - [`ADR-018-local-job-supervision.md`](ADR-018-local-job-supervision.md)
 - [`ADR-019-idempotent-local-queue.md`](ADR-019-idempotent-local-queue.md)
+- [`ADR-020-e7-optimized-job-modes.md`](ADR-020-e7-optimized-job-modes.md)

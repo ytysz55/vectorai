@@ -1,74 +1,111 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { MODE_OPTIONS, errorDetail, isJobStatus, isMode, isPublished, isTerminal } from "./jobApi";
+import type { JobStatus, Mode } from "./jobApi";
 import "./styles.css";
 
-type VectorizeResponse = {
-  job_id: string;
-  status: "success" | "needs_review";
-  mode: "faithful" | "geometric" | "minimal" | "stroke";
-  artifacts: Record<string, string>;
-  palette_count: number;
-  region_count: number;
-  seam_gap_rate: number;
-};
-
-type ErrorResponse = { detail?: unknown };
-
 const API_ORIGIN = "http://127.0.0.1:8000";
+const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
-function isVectorizeResponse(value: unknown): value is VectorizeResponse {
-  return typeof value === "object" && value !== null && "job_id" in value;
-}
-
-function errorDetail(value: unknown): string {
-  const detail = (value as ErrorResponse).detail;
-  return typeof detail === "string" ? detail : "Local reconstruction failed.";
+async function parseResponse(response: Response): Promise<JobStatus> {
+  const payload: unknown = await response.json();
+  if (!response.ok) throw new Error(errorDetail(payload));
+  if (!isJobStatus(payload)) throw new Error("Local job response failed validation.");
+  return payload;
 }
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState("geometric");
-  const [result, setResult] = useState<VectorizeResponse | null>(null);
+  const [mode, setMode] = useState<Mode>("geometric");
+  const [job, setJob] = useState<JobStatus | null>(null);
+  const [sourceUrl, setSourceUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const controllerRef = useRef<AbortController | null>(null);
+  const submissionRef = useRef<{ file: File; mode: Mode; key: string } | null>(null);
 
-  const sourceUrl = useMemo(
-    () => (file ? URL.createObjectURL(file) : ""),
-    [file],
-  );
+  useEffect(() => {
+    if (!file) { setSourceUrl(""); return; }
+    const url = URL.createObjectURL(file);
+    setSourceUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  useEffect(() => () => controllerRef.current?.abort(), []);
+
+  const activeJob = job !== null && !isTerminal(job.state);
+  const published = job !== null && isPublished(job.state);
   const artifactUrl = (name: string) =>
-    result ? `${API_ORIGIN}${result.artifacts[name]}` : "";
+    published && job.artifacts[name] ? `${API_ORIGIN}${job.artifacts[name]}` : "";
+
+  async function followJob(initial: JobStatus, controller: AbortController): Promise<void> {
+    let current = initial;
+    while (!isTerminal(current.state) && !controller.signal.aborted) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 600));
+      if (controller.signal.aborted) return;
+      const response = await fetch(`${API_ORIGIN}/v1/jobs/${current.job_id}`, { signal: controller.signal });
+      current = await parseResponse(response);
+      if (!controller.signal.aborted) setJob(current);
+    }
+  }
 
   async function vectorize() {
-    if (!file) {
-      setError("Choose a PNG or JPEG first.");
-      return;
+    if (!file) { setError("Choose a PNG or JPEG first."); return; }
+    if (file.type !== "image/png" && file.type !== "image/jpeg") {
+      setError("Only PNG and JPEG are supported."); return;
     }
+    if (file.size > MAX_UPLOAD_BYTES) { setError("Image exceeds the 32 MiB local upload limit."); return; }
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setBusy(true);
     setError("");
-    setResult(null);
     try {
-      const response = await fetch(`${API_ORIGIN}/v1/vectorize`, { // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request
-        method: "POST",
-        headers: {
-          "content-type":
-            file.type === "image/jpeg" ? "image/jpeg" : "image/png",
-          "x-vectorai-filename": file.name,
-          "x-vectorai-mode": mode,
-        },
-        body: await file.arrayBuffer(),
-      });
-      const payload: unknown = await response.json();
-      if (!response.ok || !isVectorizeResponse(payload)) {
-        throw new Error(errorDetail(payload));
+      let current: JobStatus;
+      if (activeJob && job) {
+        current = job; // Resume polling; never silently enqueue duplicate work.
+      } else {
+        setJob(null);
+        const previous = submissionRef.current;
+        const key = previous?.file === file && previous.mode === mode
+          ? previous.key : crypto.randomUUID();
+        submissionRef.current = { file, mode, key };
+        const response = await fetch(`${API_ORIGIN}/v1/jobs`, { // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request
+          method: "POST",
+          headers: {
+            "content-type": file.type,
+            "x-vectorai-filename": file.name,
+            "x-vectorai-mode": mode,
+            "idempotency-key": key,
+          },
+          body: file,
+          signal: controller.signal,
+        });
+        current = await parseResponse(response);
+        if (controller.signal.aborted) return;
+        setJob(current);
+        submissionRef.current = null;
       }
-      setResult(payload);
+      await followJob(current, controller);
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Unexpected local error.",
-      );
+      if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Local request failed.");
     } finally {
-      setBusy(false);
+      if (!controller.signal.aborted) {
+        setBusy(false);
+        controllerRef.current = null;
+      }
+    }
+  }
+
+  async function cancelJob() {
+    if (!job || !activeJob || job.cancel_requested) return;
+    try {
+      const response = await fetch(`${API_ORIGIN}/v1/jobs/${job.job_id}/cancel`, {
+        method: "POST",
+        signal: controllerRef.current?.signal,
+      });
+      const updated = await parseResponse(response);
+      setJob(updated);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to cancel local job.");
     }
   }
 
@@ -80,21 +117,16 @@ function App() {
       </header>
       <section className="hero">
         <p className="eyebrow">TOPOLOGY-FIRST VECTOR RECONSTRUCTION</p>
-        <h1>
-          We don’t trace pixels.
-          <br />
-          We reconstruct design intent.
-        </h1>
-        <p className="lede">
-          Upload a flat-color logo or icon. The source never leaves this device.
-        </p>
+        <h1>We don’t trace pixels.<br />We reconstruct design intent.</h1>
+        <p className="lede">Upload a flat-color logo or icon. The source never leaves this device.</p>
       </section>
       <section className="controls panel">
         <label className="file-picker">
           <input
             accept="image/png,image/jpeg"
             type="file"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            disabled={busy || activeJob}
+            onChange={(event) => { setFile(event.target.files?.[0] ?? null); setJob(null); setError(""); submissionRef.current = null; }}
           />
           <span>{file ? file.name : "Choose PNG or JPEG"}</span>
         </label>
@@ -102,20 +134,28 @@ function App() {
           Reconstruction mode
           <select
             value={mode}
-            onChange={(event) => setMode(event.target.value)}
+            disabled={busy || activeJob}
+            onChange={(event) => { if (isMode(event.target.value)) { setMode(event.target.value); submissionRef.current = null; } }}
           >
-            <option value="faithful">Faithful</option>
-            <option value="geometric">Geometric</option>
-            <option value="minimal">Minimal</option>
-            <option value="stroke">Stroke / line-art</option>
+            {MODE_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
         <button disabled={busy} onClick={vectorize} type="button">
-          {busy ? "Reconstructing locally…" : "Reconstruct locally"}
+          {busy ? "Reconstructing locally…" : activeJob ? "Resume job status" : "Reconstruct locally"}
         </button>
+        {activeJob && !job?.cancel_requested && (
+          <button className="cancel" onClick={cancelJob} type="button">Cancel job</button>
+        )}
       </section>
-      {error && <p className="error">{error}</p>}
-      {(sourceUrl || result) && (
+      {job && (
+        <p className="job-state" role="status" aria-live="polite">
+          Job {job.job_id.slice(-12)} · {job.state}
+          {job.cancel_requested ? " · cancellation requested" : ""}
+          {job.error ? ` · ${job.error.code}: ${job.error.message}` : ""}
+        </p>
+      )}
+      {error && <p className="error" role="alert">{error}</p>}
+      {(sourceUrl || job) && (
         <section className="comparison">
           <article className="panel visual">
             <h2>Source raster</h2>
@@ -123,58 +163,44 @@ function App() {
           </article>
           <article className="panel visual">
             <h2>Editable vector result</h2>
-            {result ? (
-              <img
-                alt="Rendered vector preview"
-                src={artifactUrl("preview.png")}
-              />
+            {artifactUrl("preview.png") ? (
+              <img alt="Rendered vector preview" src={artifactUrl("preview.png")} />
             ) : (
-              <div className="placeholder">Awaiting local reconstruction</div>
+              <div className="placeholder">
+                {activeJob ? "Local reconstruction in progress" : "No validated preview available"}
+              </div>
             )}
           </article>
         </section>
       )}
-      {result && (
+      {job && (
         <section className="metrics panel">
           <h2>Proof artifact</h2>
           <div className="metric-grid">
-            <Metric label="Palette" value={`${result.palette_count} colors`} />
-            <Metric label="Regions" value={String(result.region_count)} />
-            <Metric
-              label="Seam gaps"
-              value={`${(result.seam_gap_rate * 100).toFixed(2)}%`}
-            />
-            <Metric label="Mode" value={result.mode} />
-            <Metric label="Status" value={result.status} />
+            <Metric label="Palette" value={job.palette_count === null ? "—" : `${job.palette_count} colors`} />
+            <Metric label="Regions" value={job.region_count === null ? "—" : String(job.region_count)} />
+            <Metric label="Seam gaps" value={job.seam_gap_rate === null ? "—" : `${(job.seam_gap_rate * 100).toFixed(2)}%`} />
+            <Metric label="Mode" value={job.mode} />
+            <Metric label="Status" value={job.state} />
           </div>
-          <div className="downloads">
-            {Object.entries(result.artifacts).map(([name, path]) => (
-              <a
-                href={`${API_ORIGIN}${path}`}
-                key={name}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download {name}
-              </a>
-            ))}
-          </div>
+          {published && (
+            <div className="downloads">
+              {Object.entries(job.artifacts).map(([name, path]) => (
+                <a href={`${API_ORIGIN}${path}`} key={name} target="_blank" rel="noreferrer">
+                  Download {name}
+                </a>
+              ))}
+            </div>
+          )}
         </section>
       )}
-      <footer>
-        Offline by design · deterministic artifacts · no remote inference
-      </footer>
+      <footer>Offline by design · deterministic artifacts · no remote inference</footer>
     </main>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
+  return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

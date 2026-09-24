@@ -111,6 +111,28 @@ jobs:
         shell: bash
         run: git diff --exit-code
 
+  web-check:
+    name: Ubuntu / local web UI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned UI dependencies
+        run: npm ci --prefix apps/web
+      - name: Type-check and build UI
+        run: npm run build --prefix apps/web
+      - name: Verify UI job contracts
+        run: npm test --prefix apps/web
+
   benchmark-smoke:
     name: Ubuntu / pinned two-baseline smoke
     runs-on: ubuntu-24.04
