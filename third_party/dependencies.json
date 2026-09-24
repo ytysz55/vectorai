@@ -154,7 +154,7 @@
     {
       "name": "Inkscape",
       "version": "not-selected",
-      "spdx": "GPL-2.0-or-later",
+      "spdx": "GPL-3.0-or-later",
       "status": "review",
       "usage": "external-baseline-and-renderer",
       "source_url": "https://gitlab.com/inkscape/inkscape",

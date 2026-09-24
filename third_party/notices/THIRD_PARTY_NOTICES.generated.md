@@ -10,7 +10,7 @@
 | Clipper2 | not-selected | `BSL-1.0` | allow | yes | https://github.com/AngusJohnson/Clipper2 |
 | Eigen | not-selected | `MPL-2.0` | allow | yes | https://gitlab.com/libeigen/eigen |
 | FastAPI | not-selected | `MIT` | allow | yes | https://github.com/fastapi/fastapi |
-| Inkscape | not-selected | `GPL-2.0-or-later` | review | no | https://gitlab.com/inkscape/inkscape |
+| Inkscape | not-selected | `GPL-3.0-or-later` | review | no | https://gitlab.com/inkscape/inkscape |
 | OpenCV | not-selected | `Apache-2.0` | allow | yes | https://github.com/opencv/opencv |
 | PolyFit | not-selected | `MIT` | review | no | https://github.com/dedoardo/polyfit |
 | PolyVectorization | not-selected | `MIT` | review | no | https://github.com/bmpix/PolyVectorization |

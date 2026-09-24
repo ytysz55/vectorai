@@ -61,7 +61,7 @@ The code, library, feature, or model must not enter the proprietary product unde
 | Potrace/libpotrace | Binary baseline | GPL-2.0-or-later | review | External process only; never link/copy into core. |
 | SuiteSparse CHOLMOD/SPQR | Ceres optional backend | GPL/commercial | deny | Commercial license required to change this decision. |
 | CGAL GPL packages | Geometry dependency | Package-specific GPL/LGPL/commercial | deny | Not needed for P0; package-by-package review required. |
-| Inkscape | Manual/CI baseline | GPL-2.0-or-later | review | External tool; no default bundling. |
+| Inkscape | Manual/CI baseline | GPL-3.0-or-later | review | Complete binary license per upstream COPYING; individual sources differ. External tool; no default bundling. |
 | Chromium | Renderer compatibility oracle | BSD-3-Clause plus third-party | review | CI/system tool; no product bundling in P0. |
 | Adobe Illustrator | Manual baseline | Proprietary | review | Licensed operator and documented preset/version only. |
 | Vectorizer.AI | Competitor benchmark | Proprietary service terms | review | Written/ToS permission required. |

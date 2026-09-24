@@ -1156,14 +1156,15 @@ Bu bölüm hukuki tavsiye değildir.
 - [x] **ADR-006:** İç optimizer evaluator ile referans renderer ayrımı — `docs/adr/ADR-006-optimizer-evaluator-renderer-separation.md`.
 - [ ] **ADR-007:** DP/beam/MILP model selection yaklaşımı ve FTO etkisi.
 - [x] **ADR-008:** Platform içi/platformlar arası determinism — `docs/adr/ADR-008-determinism-contract.md`.
-- [ ] **ADR-009:** PDF backend ve fiziksel ölçü.
+- [x] **ADR-009:** PDF backend ve fiziksel ölçü — `docs/adr/ADR-009-pdf-export-scope.md` (E6 SVG-only kararı).
 - [ ] **ADR-010:** Confidence kalibrasyonu ve UI sunumu.
 - [x] **ADR-011:** Koordinat normalizasyonu, epsilon ve SVG quantization — `docs/adr/ADR-011-coordinate-epsilon-serialization.md`.
 - [x] **ADR-012:** Fill/stroke arbitration — `docs/adr/ADR-012-fill-stroke-arbitration.md`.
-- [ ] **ADR-013:** Cut-ready minimum geometri toleransları.
+- [x] **ADR-013:** Cut-ready minimum geometri toleransları — `docs/adr/ADR-013-cut-ready-physical-validation.md`.
 - [ ] **ADR-014:** Artifact storage, veri retention ve silme.
 - [ ] **ADR-015:** Lokal reprocess graph invalidation sınırı.
 - [x] **ADR-016:** Local-first web deployment, localhost güvenliği ve opsiyonel Tauri paketleme — `docs/adr/ADR-016-local-first-web-deployment.md`.
+- [x] **ADR-017:** Local observability ve privacy — `docs/adr/ADR-017-local-observability-and-privacy.md`.
 
 Her ADR; bağlam, seçenekler, karar, gerekçe, benchmark kanıtı, sonuçlar ve geri dönüş maliyeti içerir.
 
