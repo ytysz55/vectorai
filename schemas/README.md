@@ -15,6 +15,7 @@ All public JSON artifacts use JSON Schema draft 2020-12 and carry an explicit `s
 | `optimizer-profiles.schema.json` | Four-mode E5 objective weights, bounded refinement, and render-rank policy |
 | `optimizer-g4-report.schema.json` | E5 ablation, topology, fidelity, node, runtime, and continuation verdict |
 | `e6-release-report.schema.json` | G2/G3/G4 repeat digests and pairwise white-matte renderer release evidence |
+| `local-job.schema.json` | E7 loopback job lifecycle, typed error, and published artifact status |
 
 `fixtures/valid` must be accepted and `fixtures/invalid` must be rejected by the schema test suite.
 

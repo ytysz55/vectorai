@@ -22,6 +22,7 @@ SCHEMA_NAMES = (
     "optimizer-profiles",
     "optimizer-g4-report",
     "e6-release-report",
+    "local-job",
 )
 
 

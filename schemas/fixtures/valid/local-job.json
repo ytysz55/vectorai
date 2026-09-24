@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-111111111111",
+  "state": "success",
+  "mode": "geometric",
+  "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "engine_build_id": "python-000000000000",
+  "created_at": "2026-01-01T00:00:00Z",
+  "started_at": "2026-01-01T00:00:01Z",
+  "completed_at": "2026-01-01T00:00:02Z",
+  "cancel_requested": false,
+  "artifacts": {
+    "output.svg": "/v1/jobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-111111111111/artifacts/output.svg"
+  },
+  "error": null,
+  "palette_count": 2,
+  "region_count": 2,
+  "seam_gap_rate": 0.0
+}

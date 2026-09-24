@@ -1,7 +1,7 @@
 # VectorAI Motoru — PRD, Mimari Plan ve Geliştirme Task Listesi
 
-**Belge durumu:** Uygulama öncesi taslak  
-**Belge sürümü:** 0.1  
+**Belge durumu:** Yaşayan geliştirme planı; E0–E6 tamamlandı, E7 uygulanıyor
+**Belge sürümü:** 0.2
 **Ana kaynak:** `motor_teknik_rapor_kisa.md`  
 **Hedef ekip:** İlk aşamada 1 çekirdek geliştirici  
 **Ürün aşaması:** Yatırım kanıtı → kontrollü pilot → v1.0 adayı
@@ -19,7 +19,7 @@ Bu belge aynı anda dört işlev görür:
 
 Bağlayıcı geliştirme sırası:
 
-> **Benchmark harness → Binary vertical slice → Multicolor fill → Stroke → Global optimizer → UI**
+> **Benchmark harness → Binary vertical slice → Multicolor fill → Stroke → Global optimizer → Validator/cut-ready/observability → Lokal job API/UI → Pilot**
 
 Bir sonraki faza yalnızca ilgili kalite kapısı geçildikten sonra başlanır. Başarısız bir kapı yeni özellik ekleyerek gizlenmez; temsil, algoritma veya kapsam yeniden değerlendirilir.
 
@@ -122,7 +122,7 @@ Binary faz nihai ürün kapsamı değildir; multicolor aşamasına geçmeden alg
 
 1. Fill/stroke hipotez ayrımı ve line-art centerline çıkarımı.
 2. Sabit topoloji altında global continuous optimization.
-3. `Faithful`, `Geometric`, `Minimal` ve `Cut-ready` profillerinin tamamını sertleştirmek.
+3. `Faithful`, `Geometric`, `Minimal` fill profilleri ile `Stroke` modunu sertleştirmek; `Cut-ready`yi ayrıca fiziksel ölçü belirtilen opt-in hard gate/export olarak sunmak (genel dördüncü fill modu değildir).
 4. Lokal yeniden işleme ve açıklanabilir hata/güven görünümü.
 5. Gerçek kullanıcı girdilerinde kontrollü pilot.
 6. Gerekirse aynı web arayüzünü Tauri ile masaüstü pakete dönüştürmek.
@@ -239,7 +239,7 @@ Akış:
 
 ### 7.3 Local-first web UI akışı
 
-Arayüz React/TypeScript ile tarayıcıda açılır; motor tarayıcı/WASM içinde çalışmaz. Yerel FastAPI servisi pybind11 üzerinden native C++ motoru çağırır ve varsayılan olarak yalnızca `localhost` dinler. Böylece dosya cihazdan çıkmadan web geliştirme hızı ve çapraz platform avantajı elde edilir. Cloud servis daha sonra aynı API sözleşmesiyle eklenebilir; gerçek masaüstü paket gerekirse Electron yerine Tauri ile aynı UI sarılır.
+Arayüz React/TypeScript ile tarayıcıda açılır; motor tarayıcı/WASM içinde çalışmaz. Mevcut yerel FastAPI servisi Python orchestration katmanını çağırır; binary dilim native C++ CLI üzerinden yürür, multicolor/stroke yolları Python’dadır. Coarse-grained pybind11 köprüsü ancak ihtiyaç ölçülürse eklenir. Servis varsayılan olarak yalnızca `localhost` dinler; görüntü cihazdan çıkmaz. Cloud servis daha sonra ayrı güvenlik kararıyla aynı API sözleşmesini kullanabilir; masaüstü paket gerekirse Tauri ayrıca değerlendirilir.
 
 **P0 yatırım demosu:**
 
@@ -833,7 +833,7 @@ Harici resvg, Ceres’in her iterasyonunda çağrılmamalıdır. Analytic/differ
 7. Node/path/primitive editability.
 8. Türkçe diakritik, nokta ve counter koruması.
 
-PDF backend ve fiziksel ölçü sözleşmesi ADR-009 tamamlanana kadar SVG tek bağlayıcı çıktı formatıdır.
+[ADR-009](adr/ADR-009-pdf-export-scope.md) tamamlandı: PDF için bağımsız path/ölçü/renderer kanıtı bulunmadığından SVG tek bağlayıcı çıktı formatıdır.
 
 ---
 
@@ -1165,6 +1165,8 @@ Bu bölüm hukuki tavsiye değildir.
 - [ ] **ADR-015:** Lokal reprocess graph invalidation sınırı.
 - [x] **ADR-016:** Local-first web deployment, localhost güvenliği ve opsiyonel Tauri paketleme — `docs/adr/ADR-016-local-first-web-deployment.md`.
 - [x] **ADR-017:** Local observability ve privacy — `docs/adr/ADR-017-local-observability-and-privacy.md`.
+- [x] **ADR-018:** Lokal job process supervision ve fail-closed publication — `docs/adr/ADR-018-local-job-supervision.md`.
+- [x] **ADR-019:** Bounded FIFO queue ve özel idempotency indeksi — `docs/adr/ADR-019-idempotent-local-queue.md`.
 
 Her ADR; bağlam, seçenekler, karar, gerekçe, benchmark kanıtı, sonuçlar ve geri dönüş maliyeti içerir.
 
@@ -1461,11 +1463,13 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ## E7 — API, UI ve lokal yeniden işleme — 15 gün
 
-- [ ] **API-001 — Lokal job API** — P1, 2 gün, bağımlılık: OBS-002, VAL-001
-  - **Kabul:** Upload/status/cancel/artifact/error sözleşmesi stabil.
+- [x] **API-001 — Lokal job API** — P1, 2 gün, bağımlılık: OBS-002, VAL-001
+  - **Kabul:** Upload/status/cancel/artifact/error sözleşmesi stabil. `POST /v1/jobs` + status/cancel/allowlisted artifact uçları, atomik JSON durum kaydı ve gerçek worker/renderer process-tree iptali testlidir. E3 senkron endpoint uyumluluk için kalır. API-002 kuyruğu/idempotency henüz yoktur; tek worker doluyken typed `429` döner. Yeni job uçları yalnız işlevsel `geometric` ve `stroke` modlarını ilan eder.
 
-- [ ] **API-002 — Idempotency ve resource queue** — P1, 2 gün, bağımlılık: API-001
-  - **Kabul:** Aynı anahtar duplicate iş üretmez; limit aşımı typed error.
+- [x] **API-002 — Idempotency ve resource queue** — P1, 2 gün, bağımlılık: API-001
+  - **Kabul:** Aynı anahtar duplicate iş üretmez; limit aşımı typed error. Ham anahtar kaydedilmeden SHA-256/fingerprint özel yan dosyası tekrar başlatmada da eşleşir; farklı talep `409`, dolu FIFO/limitli upload `429`, bozuk indeks keyed admission için `503` üretir. Tek API instance + bir worker/iki bekleyen iş varsayılandır; otomatik retention, multi-process kilidi ve OS RAM sandbox'ı kapsam dışıdır.
+
+**E7 API kanıtı:** Job/queue/cancel/restart/CORS/symlink ve kilitli şema fixture testleriyle `245` Python testi, Ruff, mypy ve mevcut web build geçti. API-001/002 tamam; UI-001 için `faithful`/`minimal` profil kablolaması ve polling/cancel arayüzü henüz uygulanmadı. Native CTest bu ortamda bulunmadığı için bu E7 değişiklikleri için tekrar çalıştırılamadı.
 
 - [ ] **UI-001 — Upload, mode ve job status** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Dört mode ve bütün final statüler doğru görünür.

@@ -8,6 +8,9 @@ import hashlib
 import json
 import os
 import re
+import threading
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
@@ -17,6 +20,12 @@ from fastapi import FastAPI, HTTPException, Request  # type: ignore[import-not-f
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found, unused-ignore]
 from fastapi.responses import FileResponse  # type: ignore[import-not-found, unused-ignore]
 
+from vectorai_api.jobs import (
+    IdempotencyConflictError,
+    IdempotencyStoreError,
+    JobBusyError,
+    JobManager,
+)
 from vectorai_engine.errors import EngineFailure, RunStatus
 from vectorai_engine.multicolor_pipeline import (
     MulticolorPipelineConfig,
@@ -43,6 +52,9 @@ class ApiSettings:
     resvg_executable: Path | None = None
     resvg_command_prefix: tuple[str, ...] | None = None
     max_upload_bytes: int = MAX_UPLOAD_BYTES
+    max_job_seconds: float = 180.0
+    max_queued_jobs: int = 2
+    max_parallel_uploads: int = 3
 
 
 class ErrorPayload(TypedDict):
@@ -73,6 +85,15 @@ def _error(failure: EngineFailure) -> HTTPException:
         "message": failure.error.message,
     }
     return HTTPException(status_code=422, detail=payload)
+
+
+def _job_http(
+    status: int, code: str, message: str, *, retryable: bool = False, stage: str = "job"
+) -> HTTPException:
+    return HTTPException(
+        status_code=status,
+        detail={"code": code, "stage": stage, "message": message, "retryable": retryable},
+    )
 
 
 def _job_path(settings: ApiSettings, job_id: str) -> Path:
@@ -109,14 +130,47 @@ async def read_bounded_body(request: Request, max_bytes: int) -> bytes:
 def create_app(settings: ApiSettings) -> FastAPI:
     if settings.max_upload_bytes < 1 or settings.max_upload_bytes > MAX_UPLOAD_BYTES:
         raise ValueError(f"max_upload_bytes must be in [1, {MAX_UPLOAD_BYTES}]")
+    if not 1 <= settings.max_parallel_uploads <= 16:
+        raise ValueError("max_parallel_uploads must be in [1, 16]")
     if settings.resvg_command_prefix is None and (
         settings.resvg_executable is None or not settings.resvg_executable.is_file()
     ):
         raise ValueError(f"resvg executable not found: {settings.resvg_executable}")
     settings.jobs_directory.mkdir(parents=True, exist_ok=True)
+    manager = JobManager(
+        settings.jobs_directory,
+        resvg_executable=settings.resvg_executable,
+        resvg_command_prefix=settings.resvg_command_prefix,
+        max_job_seconds=settings.max_job_seconds,
+        max_queued_jobs=settings.max_queued_jobs,
+    )
+
+    upload_lock = threading.Lock()
+    active_uploads = 0
+
+    async def bounded_upload(request: Request) -> bytes:
+        nonlocal active_uploads
+        with upload_lock:
+            if active_uploads >= settings.max_parallel_uploads:
+                raise HTTPException(status_code=429, detail="local upload slots are full")
+            active_uploads += 1
+        try:
+            return await read_bounded_body(request, settings.max_upload_bytes)
+        finally:
+            with upload_lock:
+                active_uploads -= 1
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
+        try:
+            yield
+        finally:
+            manager.shutdown()
+
     app = FastAPI(
         title="VectorAI Local API",
         version="0.1.0",
+        lifespan=lifespan,
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -126,7 +180,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         allow_origins=["http://127.0.0.1:5173", "http://[::1]:5173"],
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["content-type", "x-vectorai-filename", "x-vectorai-mode"],
+        allow_headers=["content-type", "x-vectorai-filename", "x-vectorai-mode", "idempotency-key"],
     )
 
     def health_response() -> HealthResponse:
@@ -150,7 +204,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
                 detail="content-type must be image/png or image/jpeg",
             )
         # Do not buffer an unbounded chunked request before enforcing the limit.
-        source_bytes = await read_bounded_body(request, settings.max_upload_bytes)
+        source_bytes = await bounded_upload(request)
         if not source_bytes:
             raise HTTPException(status_code=400, detail="request body is empty")
         if len(source_bytes) > settings.max_upload_bytes:
@@ -158,6 +212,14 @@ def create_app(settings: ApiSettings) -> FastAPI:
         mode = request.headers.get("x-vectorai-mode", "geometric").lower()
         if mode not in {"faithful", "geometric", "minimal", "stroke"}:
             raise HTTPException(status_code=400, detail="unknown vectorization mode")
+        if manager.has_active():
+            raise _job_http(
+                429,
+                "RESOURCE_LIMIT",
+                "Local worker is busy; retry later.",
+                retryable=True,
+                stage="admission",
+            )
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         job_id = f"{source_sha256}-{uuid4().hex[:12]}"
         job_directory = _job_path(settings, job_id)
@@ -227,17 +289,111 @@ def create_app(settings: ApiSettings) -> FastAPI:
             "seam_gap_rate": seam_gap_rate,
         }
 
+    async def submit_job(request: Request) -> dict[str, object]:
+        length = request.headers.get("content-length")
+        if length is not None:
+            try:
+                parsed_length = int(length)
+            except ValueError as error:
+                raise _job_http(400, "UNSUPPORTED_INPUT", "Invalid content length.") from error
+            if parsed_length < 0 or parsed_length > settings.max_upload_bytes:
+                raise _job_http(413, "RESOURCE_LIMIT", "Upload exceeds the local byte budget.")
+        content_type = request.headers.get("content-type", "").split(";", 1)[0].lower()
+        if content_type not in {"image/png", "image/jpeg"}:
+            raise _job_http(415, "UNSUPPORTED_INPUT", "Only PNG and JPEG are supported.")
+        mode = request.headers.get("x-vectorai-mode", "geometric").lower()
+        if mode not in {"geometric", "stroke"}:
+            raise _job_http(400, "UNSUPPORTED_INPUT", "Select geometric or stroke mode.")
+        try:
+            source = await bounded_upload(request)
+        except HTTPException as error:
+            if error.status_code == 429:
+                raise _job_http(
+                    429,
+                    "RESOURCE_LIMIT",
+                    "Local upload slots are full.",
+                    retryable=True,
+                    stage="admission",
+                ) from error
+            raise _job_http(
+                413, "RESOURCE_LIMIT", "Upload exceeds the local byte budget."
+            ) from error
+        if not source:
+            raise _job_http(400, "UNSUPPORTED_INPUT", "Request body is empty.")
+        try:
+            name = _safe_filename(request)
+        except HTTPException as error:
+            raise _job_http(415, "UNSUPPORTED_INPUT", "Invalid upload filename.") from error
+        try:
+            return manager.submit(
+                source,
+                input_name=name,
+                mode=mode,
+                idempotency_key=request.headers.get("idempotency-key"),
+            )
+        except IdempotencyStoreError as error:
+            raise _job_http(
+                503, "IDEMPOTENCY_STORE_UNAVAILABLE", "Local key history needs repair."
+            ) from error
+        except IdempotencyConflictError as error:
+            raise _job_http(
+                409, "IDEMPOTENCY_CONFLICT", "Key is bound to a different request."
+            ) from error
+        except ValueError as error:
+            raise _job_http(400, "UNSUPPORTED_INPUT", "Invalid idempotency key.") from error
+        except JobBusyError as error:
+            raise _job_http(
+                429,
+                "RESOURCE_LIMIT",
+                "Local job queue is full; retry later.",
+                retryable=True,
+                stage="admission",
+            ) from error
+        except OSError as error:
+            raise _job_http(500, "EXPORT_FAILED", "Cannot create local job.") from error
+
+    def job_status(job_id: str) -> dict[str, object]:
+        try:
+            return manager.status(job_id)
+        except FileNotFoundError as error:
+            raise _job_http(404, "UNSUPPORTED_INPUT", "Unknown job.") from error
+
+    def cancel_job(job_id: str) -> dict[str, object]:
+        try:
+            return manager.cancel(job_id)
+        except FileNotFoundError as error:
+            raise _job_http(404, "UNSUPPORTED_INPUT", "Unknown job.") from error
+        except ValueError as error:
+            raise _job_http(409, "JOB_ALREADY_TERMINAL", "Job has already completed.") from error
+
     def artifact_response(job_id: str, artifact_name: str) -> FileResponse:
         media_type = ARTIFACT_MEDIA_TYPES.get(artifact_name)
         if media_type is None:
             raise HTTPException(status_code=404, detail="unknown artifact")
-        artifact_path = _job_path(settings, job_id) / "artifacts" / artifact_name
-        if not artifact_path.is_file():
+        job_path = _job_path(settings, job_id)
+        if (job_path / "job-status.json").is_file():
+            try:
+                if not manager.can_download(job_id):
+                    raise HTTPException(status_code=404, detail="artifact is not published")
+            except FileNotFoundError as error:
+                raise HTTPException(status_code=404, detail="unknown job") from error
+        artifact_root = job_path / "artifacts"
+        if artifact_root.is_symlink():
             raise HTTPException(status_code=404, detail="artifact does not exist")
+        artifact_path = artifact_root / artifact_name
+        if artifact_path.is_symlink() or not artifact_path.is_file():
+            raise HTTPException(status_code=404, detail="artifact does not exist")
+        try:
+            artifact_path.resolve().relative_to(job_path)
+        except ValueError as error:
+            raise HTTPException(status_code=404, detail="artifact does not exist") from error
         return FileResponse(artifact_path, media_type=media_type, filename=artifact_name)
 
     app.get("/health")(health_response)
     app.post("/v1/vectorize", responses={422: {"description": "engine failed"}})(vectorize_response)
+    app.post("/v1/jobs", status_code=202)(submit_job)
+    app.get("/v1/jobs/{job_id}")(job_status)
+    app.post("/v1/jobs/{job_id}/cancel")(cancel_job)
     app.get("/v1/jobs/{job_id}/artifacts/{artifact_name}")(artifact_response)
     return app
 

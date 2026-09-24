@@ -24,3 +24,5 @@ Statuses: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
 - [`ADR-013-cut-ready-physical-validation.md`](ADR-013-cut-ready-physical-validation.md)
 - [`ADR-016-local-first-web-deployment.md`](ADR-016-local-first-web-deployment.md)
 - [`ADR-017-local-observability-and-privacy.md`](ADR-017-local-observability-and-privacy.md)
+- [`ADR-018-local-job-supervision.md`](ADR-018-local-job-supervision.md)
+- [`ADR-019-idempotent-local-queue.md`](ADR-019-idempotent-local-queue.md)

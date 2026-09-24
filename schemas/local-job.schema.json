@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vectorai.local/local-job.schema.json",
+  "title": "VectorAI Local Job Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "job_id", "state", "mode", "input_sha256", "config_sha256", "engine_build_id", "created_at", "started_at", "completed_at", "cancel_requested", "artifacts", "error", "palette_count", "region_count", "seam_gap_rate"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "job_id": { "type": "string", "pattern": "^[a-f0-9]{64}-[a-f0-9]{12}$" },
+    "state": { "enum": ["accepted", "running", "success", "degraded", "needs_review", "unsupported", "failed", "canceled"] },
+    "mode": { "enum": ["geometric", "stroke"] },
+    "input_sha256": { "$ref": "#/$defs/sha256" },
+    "config_sha256": { "$ref": "#/$defs/sha256" },
+    "engine_build_id": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "minLength": 10 },
+    "started_at": { "type": ["string", "null"] },
+    "completed_at": { "type": ["string", "null"] },
+    "cancel_requested": { "type": "boolean" },
+    "cleanup_pending": { "type": "boolean" },
+    "artifacts": {
+      "type": "object",
+      "propertyNames": { "enum": ["output.svg", "preview.png", "scene.json", "run-manifest.json", "validation-report.json", "events.jsonl", "cut-outline.svg"] },
+      "additionalProperties": { "type": "string", "pattern": "^/v1/jobs/[a-f0-9]{64}-[a-f0-9]{12}/artifacts/[A-Za-z0-9.-]+$" }
+    },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "stage", "message", "retryable"],
+          "properties": {
+            "code": { "type": "string", "pattern": "^[A-Z_]+$" },
+            "stage": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1 },
+            "retryable": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "palette_count": { "type": ["integer", "null"], "minimum": 0 },
+    "region_count": { "type": ["integer", "null"], "minimum": 0 },
+    "seam_gap_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}
