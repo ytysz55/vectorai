@@ -9,6 +9,7 @@ import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import cast
 
 from vectorai_bench.external_tools import ToolStatus
 from vectorai_bench.metrics.topology import analyze_binary_mask
@@ -22,6 +23,7 @@ from .multicolor_graph import build_multicolor_region_graph
 from .multicolor_optimizer import optimize_multicolor_hypotheses
 from .multicolor_scene import export_multicolor_svg, select_multicolor_scene
 from .normalize import normalize_source
+from .observability import full_run_manifest, stage_events
 from .palette import PaletteConfig, generate_palette_hypotheses
 from .profiles import OptimizationMode, load_optimizer_profiles
 from .reliability import analyze_reliability
@@ -44,6 +46,7 @@ class MulticolorPipelineConfig:
     primitive_tolerance: float = 0.75
     optimizer_profile_path: Path | None = None
     optimizer_mode: OptimizationMode = OptimizationMode.GEOMETRIC
+    debug_opt_in: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +171,7 @@ def run_multicolor_pipeline(
     )
     try:
         optimizer_manifest: dict[str, object] | None = None
+        optimizer_iterations = 0
         optimizer_degraded = False
         optimizer_fallback_reason: str | None = None
         if config.optimizer_profile_path is not None:
@@ -201,6 +205,7 @@ def run_multicolor_pipeline(
             else:
                 scene = optimization.scene
                 palette = optimization.palette
+                optimizer_iterations = optimization.continuous_iterations
                 optimizer_manifest = {
                     "status": "success",
                     "fallback_used": False,
@@ -210,6 +215,8 @@ def run_multicolor_pipeline(
                     "selected_candidate_id": optimization.selected_candidate_id,
                     "baseline_node_count": optimization.baseline_node_count,
                     "selected_node_count": optimization.selected_node_count,
+                    "continuous_iterations": optimization.continuous_iterations,
+                    "continuous_evaluations": optimization.continuous_evaluations,
                     "candidates": [asdict(item) for item in optimization.candidates],
                     "rejected_tolerances": [
                         list(item) for item in optimization.rejected_tolerances
@@ -322,7 +329,7 @@ def run_multicolor_pipeline(
                     "status": auxiliary.status.value,
                     "version": auxiliary.identity.version if auxiliary.identity else "unknown",
                     "output_sha256": auxiliary.output_sha256,
-                    "message": auxiliary.message,
+                    "message": auxiliary.message if config.debug_opt_in else auxiliary.status.value,
                 }
             )
             if auxiliary.status is ToolStatus.SUCCESS:
@@ -347,57 +354,86 @@ def run_multicolor_pipeline(
             if optimizer_degraded
             else RunStatus.SUCCESS
         )
+        event_path = temporary / "events.jsonl"
+        fallback_code = "OPTIMIZER_FALLBACK" if optimizer_fallback_reason is not None else None
+        try:
+            event_path.write_bytes(
+                stage_events(
+                    durations,
+                    fallback_code=fallback_code,
+                    debug_opt_in=config.debug_opt_in,
+                    source_sha256=source_sha256,
+                )
+            )
+        except OSError as error:
+            raise _failure(
+                ErrorCode.EXPORT_FAILED, Stage.EXPORT, "cannot write stage events"
+            ) from error
+        candidate_records = (
+            optimizer_manifest.get("candidates") if optimizer_manifest is not None else None
+        )
+        candidate_count = (
+            len(cast(list[object], candidate_records))
+            if isinstance(candidate_records, list)
+            else len(scene.top_k_scores)
+        )
         manifest_path = temporary / "run-manifest.json"
+        legacy_manifest = {
+            "schema_version": "1.0.0",
+            "job_id": f"multicolor-{source_sha256[:16]}",
+            "input": {
+                "sha256": source_sha256,
+                "bytes": len(source_bytes),
+                "media_type": source.media_type,
+            },
+            "configuration": {
+                "palette": asdict(config.palette),
+                "segmentation": asdict(config.segmentation),
+                "primitive_tolerance": config.primitive_tolerance,
+                "optimizer_mode": config.optimizer_mode.value
+                if config.optimizer_profile_path is not None
+                else None,
+                "optimizer_profile_sha256": optimizer_manifest.get("profile_sha256")
+                if optimizer_manifest is not None
+                else None,
+                "determinism_policy": "strict",
+                "debug_opt_in": config.debug_opt_in,
+            },
+            "stages": [{"name": name, "duration_ms": value} for name, value in durations.items()],
+            "renderer": {
+                "name": "resvg",
+                "version": rendered.identity.version if rendered.identity else "unknown",
+                "output_sha256": rendered.output_sha256,
+            },
+            "auxiliary_renderers": auxiliary_results,
+            "seams": asdict(seam_matrix),
+            "warnings": list(normalized.warnings),
+            "final_status": final_status.value,
+            "artifacts": [
+                _artifact(svg_path, temporary, "image/svg+xml"),
+                _artifact(preview_path, temporary, "image/png"),
+                _artifact(scene_path, temporary, "application/json"),
+                _artifact(validation_path, temporary, "application/json"),
+                *(_artifact(path, temporary, "image/png") for path in auxiliary_artifacts),
+            ],
+            "total_duration_ms": (time.perf_counter() - started) * 1000.0,
+            "summary": {
+                "regions": len(scene.faces),
+                "edges": graph.canonical_edge_count,
+                "candidates": candidate_count,
+                "optimizer_iterations": optimizer_iterations,
+            },
+        }
         _write_json(
             manifest_path,
-            {
-                "schema_version": "1.0.0",
-                "job_id": f"multicolor-{source_sha256[:16]}",
-                "input": {
-                    "sha256": source_sha256,
-                    "bytes": len(source_bytes),
-                    "media_type": source.media_type,
-                },
-                "configuration": {
-                    "palette": asdict(config.palette),
-                    "segmentation": asdict(config.segmentation),
-                    "primitive_tolerance": config.primitive_tolerance,
-                    "optimizer_mode": config.optimizer_mode.value
-                    if config.optimizer_profile_path is not None
-                    else None,
-                    "optimizer_profile_sha256": optimizer_manifest.get("profile_sha256")
-                    if optimizer_manifest is not None
-                    else None,
-                    "determinism_policy": "strict",
-                },
-                "stages": [
-                    {"name": name, "duration_ms": value} for name, value in durations.items()
-                ],
-                "renderer": {
-                    "name": "resvg",
-                    "version": rendered.identity.version if rendered.identity else "unknown",
-                    "output_sha256": rendered.output_sha256,
-                },
-                "auxiliary_renderers": auxiliary_results,
-                "seams": asdict(seam_matrix),
-                "warnings": [
-                    *normalized.warnings,
-                    *(
-                        (f"optimizer fallback: {optimizer_fallback_reason}",)
-                        if optimizer_fallback_reason is not None
-                        else ()
-                    ),
-                ],
-                "final_status": final_status.value,
-                "artifacts": [
-                    _artifact(svg_path, temporary, "image/svg+xml"),
-                    _artifact(preview_path, temporary, "image/png"),
-                    _artifact(scene_path, temporary, "application/json"),
-                    _artifact(validation_path, temporary, "application/json"),
-                    *(_artifact(path, temporary, "image/png") for path in auxiliary_artifacts),
-                ],
-                "total_duration_ms": (time.perf_counter() - started) * 1000.0,
-            },
+            full_run_manifest(
+                legacy_manifest,
+                stage_durations=durations,
+                mode=config.optimizer_mode.value if config.optimizer_profile_path else "geometric",
+                event_path=event_path,
+                artifact_root=temporary,
+                fallback_code=fallback_code,
+            ),
         )
         temporary.replace(output_directory)
         return MulticolorPipelineBundle(

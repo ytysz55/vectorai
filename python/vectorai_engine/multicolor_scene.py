@@ -45,6 +45,7 @@ class MulticolorScene:
     score: SceneScore
     top_k_scores: tuple[SceneScore, ...]
     has_shared_boundaries: bool
+    primitive_tolerance: float = 0.75
 
 
 def _failure(code: ErrorCode, message: str) -> EngineFailure:
@@ -243,6 +244,21 @@ def _topology_safe_cycles(
     return tuple(cycles)
 
 
+def canonical_scene_cycles(
+    graph: MulticolorRegionGraph,
+    tolerance: float,
+) -> dict[int, tuple[tuple[tuple[float, float], ...], ...]]:
+    """Reconstruct all shared-face cycles with one canonical chain cache."""
+
+    if not math.isfinite(tolerance) or tolerance < 0.0:
+        raise ValueError("canonical simplification tolerance must be finite and nonnegative")
+    cache: dict[tuple[int, ...], tuple[tuple[float, float], ...]] = {}
+    return {
+        face.face_id: _topology_safe_cycles(graph, face.face_id, cache, tolerance)
+        for face in graph.faces[1:]
+    }
+
+
 def _smoothed_cycle_path(cycle: tuple[tuple[float, float], ...]) -> str:
     points = _simplify_closed_cycle(cycle)
     midpoints = tuple(
@@ -263,7 +279,9 @@ def _smoothed_cycle_path(cycle: tuple[tuple[float, float], ...]) -> str:
     return " ".join(pieces)
 
 
-def _primitive_cycle_path(candidates: PrimitiveCandidateSet) -> str | None:
+def _ellipse_geometry(
+    candidates: PrimitiveCandidateSet,
+) -> tuple[float, float, float, float, float] | None:
     primitive: PrimitiveFit = candidates.selected
     if primitive.kind not in {PrimitiveKind.CIRCLE, PrimitiveKind.ELLIPSE}:
         return None
@@ -279,9 +297,17 @@ def _primitive_cycle_path(candidates: PrimitiveCandidateSet) -> str | None:
             center_x = 0.5 * (min(xs) + max(xs))
             center_y = 0.5 * (min(ys) + max(ys))
             radius_x = radius_y = 0.25 * (width + height)
-    rotation = math.degrees(primitive.rotation_radians)
-    cosine = math.cos(primitive.rotation_radians)
-    sine = math.sin(primitive.rotation_radians)
+    return center_x, center_y, radius_x, radius_y, primitive.rotation_radians
+
+
+def _primitive_cycle_path(candidates: PrimitiveCandidateSet) -> str | None:
+    ellipse = _ellipse_geometry(candidates)
+    if ellipse is None:
+        return None
+    center_x, center_y, radius_x, radius_y, angle = ellipse
+    rotation = math.degrees(angle)
+    cosine = math.cos(angle)
+    sine = math.sin(angle)
     offset_x = radius_x * cosine
     offset_y = radius_x * sine
     first = (center_x + offset_x, center_y + offset_y)
@@ -326,6 +352,81 @@ def _axis_aligned_rect(
     if set(points) != expected:
         return None
     return xs[0], ys[0], xs[1] - xs[0], ys[1] - ys[0]
+
+
+def _flatten_quadratic(
+    start: tuple[float, float],
+    control: tuple[float, float],
+    end: tuple[float, float],
+    depth: int = 0,
+) -> tuple[tuple[float, float], ...]:
+    """Bound sampled quadratic-to-chord deviation to 0.01 source pixels."""
+
+    midpoint = (0.5 * (start[0] + end[0]), 0.5 * (start[1] + end[1]))
+    deviation = math.dist(control, midpoint)
+    if deviation <= 0.02:
+        return (end,)
+    if depth >= 16:
+        raise ValueError("quadratic validation exceeded bounded subdivision depth")
+    first = (0.5 * (start[0] + control[0]), 0.5 * (start[1] + control[1]))
+    second = (0.5 * (control[0] + end[0]), 0.5 * (control[1] + end[1]))
+    middle = (0.5 * (first[0] + second[0]), 0.5 * (first[1] + second[1]))
+    return _flatten_quadratic(start, first, middle, depth + 1) + _flatten_quadratic(
+        middle, second, end, depth + 1
+    )
+
+
+def exported_face_cycles(
+    scene: MulticolorScene,
+) -> tuple[tuple[int, tuple[tuple[float, float], ...]], ...]:
+    """Sample the same rect/path geometry chosen by the SVG serializer.
+
+    Presentation-only shared-boundary seam strokes are intentionally excluded.
+    """
+
+    contours: list[tuple[int, tuple[tuple[float, float], ...]]] = []
+    for face in scene.faces:
+        if scene.has_shared_boundaries or _axis_aligned_rect(face.cycles) is not None:
+            contours.extend((face.face_id, cycle) for cycle in face.cycles)
+            continue
+        for cycle, candidates in zip(face.cycles, face.primitive_candidates, strict=True):
+            ellipse = _ellipse_geometry(candidates)
+            if ellipse is not None:
+                center_x, center_y, radius_x, radius_y, rotation = ellipse
+                if radius_x <= 0.0 or radius_y <= 0.0:
+                    raise _failure(ErrorCode.EXPORT_FAILED, "ellipse radii must be positive")
+                largest = max(radius_x, radius_y)
+                sagitta_ratio = min(1.0, 0.01 / largest)
+                count = max(12, math.ceil(math.pi / math.acos(1.0 - sagitta_ratio)))
+                if count > 4096:
+                    raise ValueError("ellipse validation exceeded bounded sampling budget")
+                cosine, sine = math.cos(rotation), math.sin(rotation)
+                points = tuple(
+                    (
+                        center_x
+                        + radius_x * math.cos(2.0 * math.pi * index / count) * cosine
+                        - radius_y * math.sin(2.0 * math.pi * index / count) * sine,
+                        center_y
+                        + radius_x * math.cos(2.0 * math.pi * index / count) * sine
+                        + radius_y * math.sin(2.0 * math.pi * index / count) * cosine,
+                    )
+                    for index in range(count)
+                )
+            else:
+                simplified = _simplify_closed_cycle(cycle)
+                midpoints = tuple(
+                    (
+                        0.5 * (simplified[index][0] + simplified[(index + 1) % len(simplified)][0]),
+                        0.5 * (simplified[index][1] + simplified[(index + 1) % len(simplified)][1]),
+                    )
+                    for index in range(len(simplified))
+                )
+                sampled = [midpoints[-1]]
+                for control, end in zip(simplified, midpoints, strict=True):
+                    sampled.extend(_flatten_quadratic(sampled[-1], control, end))
+                points = tuple(sampled[:-1])
+            contours.append((face.face_id, points))
+    return tuple(contours)
 
 
 def _color_hex(color: tuple[float, float, float]) -> str:
@@ -402,6 +503,7 @@ def select_multicolor_scene(
         score=score,
         top_k_scores=alternatives,
         has_shared_boundaries=bool(assembly.seam_pairs),
+        primitive_tolerance=primitive_tolerance,
     )
 
 

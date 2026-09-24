@@ -403,10 +403,9 @@ def validate_multicolor_region_graph(graph: MulticolorRegionGraph) -> None:
             raise _graph_failure("cycle traversal did not close")
         cycle_starts_by_face[graph.half_edges[start].face].append(min(local))
     for face in graph.faces:
-        if (
-            tuple(sorted(cycle_starts_by_face[face.face_id])) != face.boundary_cycles
-            or face.hole_count != max(0, len(face.boundary_cycles) - 1)
-        ):
+        if tuple(
+            sorted(cycle_starts_by_face[face.face_id])
+        ) != face.boundary_cycles or face.hole_count != max(0, len(face.boundary_cycles) - 1):
             raise _graph_failure("face boundary cycles disagree with half-edge traversal")
     neighbors: list[set[int]] = [set() for _ in graph.vertices]
     for edge in graph.half_edges:

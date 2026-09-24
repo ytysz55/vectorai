@@ -21,6 +21,7 @@ SCHEMA_NAMES = (
     "stroke-g3-report",
     "optimizer-profiles",
     "optimizer-g4-report",
+    "e6-release-report",
 )
 
 

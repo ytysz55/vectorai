@@ -10,9 +10,11 @@ from itertools import chain, islice, pairwise
 
 from .errors import EngineError, EngineFailure, ErrorCode, Stage
 from .multicolor_graph import MulticolorRegionGraph, validate_multicolor_region_graph
-from .multicolor_scene import MulticolorScene
+from .multicolor_scene import MulticolorScene, canonical_scene_cycles, exported_face_cycles
 from .shared_boundary import SharedBoundaryAssembly, validate_shared_boundary_assembly
 from .stroke_graph import CenterlineGraph, StrokeNodeKind
+from .stroke_models import StrokeStyle, WidthModel, WidthModelKind
+from .stroke_scene import stroke_export_geometry
 
 Point = tuple[float, float]
 QuantizedPoint = tuple[int, int]
@@ -196,6 +198,7 @@ def validate_contours(
     height: int,
     coordinate_decimals: int = 6,
     allowed_shared_owners: frozenset[tuple[int, int]] = frozenset(),
+    canvas_margin: float = 0.0,
 ) -> TopologyGeometryResult:
     """Validate quantized polygon/centerline geometry without parsing SVG."""
 
@@ -228,10 +231,10 @@ def validate_contours(
             continue
         if any(
             not math.isfinite(value)
-            or point[0] < 0.0
-            or point[1] < 0.0
-            or point[0] > width
-            or point[1] > height
+            or point[0] < -canvas_margin
+            or point[1] < -canvas_margin
+            or point[0] > width + canvas_margin
+            or point[1] > height + canvas_margin
             for point in contour.points
             for value in point
         ):
@@ -258,9 +261,7 @@ def validate_contours(
                 )
             )
         signature = (
-            _canonical_contour(points)
-            if contour.closed
-            else min(points, tuple(reversed(points)))
+            _canonical_contour(points) if contour.closed else min(points, tuple(reversed(points)))
         )
         previous = contour_signatures.get(signature)
         shared_twin = (
@@ -369,9 +370,10 @@ def validate_contours(
                 for inner_cycle in filled[owner]:
                     for point in inner_cycle:
                         tests = [_point_in_cycle(point, outer) for outer in filled[target]]
-                        if all(value is not None for value in tests) and sum(
-                            bool(value) for value in tests
-                        ) % 2 == 1:
+                        if (
+                            all(value is not None for value in tests)
+                            and sum(bool(value) for value in tests) % 2 == 1
+                        ):
                             overlap = True
                             break
                     if overlap:
@@ -425,6 +427,31 @@ def validate_multicolor_output(
                 *selected_faces,
             )
         )
+        return _result(findings)
+    if scene.has_shared_boundaries:
+        if not math.isfinite(scene.primitive_tolerance) or scene.primitive_tolerance < 0.0:
+            findings.append(
+                _finding(
+                    "TOPOLOGY.CANONICAL_PROVENANCE",
+                    "topology",
+                    "canonical simplification tolerance is invalid",
+                )
+            )
+            return _result(findings)
+        expected_cycles = canonical_scene_cycles(graph, scene.primitive_tolerance)
+        by_face = {face.face_id: face for face in scene.faces}
+        for face in graph.faces[1:]:
+            if by_face[face.face_id].cycles != expected_cycles[face.face_id]:
+                findings.append(
+                    _finding(
+                        "GEOMETRY.SHARED_BOUNDARY_GAP",
+                        "geometry",
+                        "scene cycle differs from canonical graph-owned boundary geometry",
+                        face.face_id,
+                    )
+                )
+        if findings:
+            return _result(findings)
     contours = tuple(
         ValidationContour(face.face_id, GeometryRole.FILL_CONTOUR, cycle, True)
         for face in scene.faces
@@ -439,6 +466,30 @@ def validate_multicolor_output(
     findings.extend(contour_result.findings)
     if not contour_result.valid:
         return _result(findings)
+    if not scene.has_shared_boundaries:
+        try:
+            exported = tuple(
+                ValidationContour(face_id, GeometryRole.FILL_CONTOUR, points, True)
+                for face_id, points in exported_face_cycles(scene)
+            )
+        except (ValueError, OverflowError, EngineFailure) as error:
+            findings.append(
+                _finding(
+                    "GEOMETRY.EXPORT_SAMPLING",
+                    "geometry",
+                    f"cannot bound exported path geometry: {error}",
+                )
+            )
+            return _result(findings)
+        exported_result = validate_contours(
+            exported,
+            width=scene.width,
+            height=scene.height,
+            canvas_margin=max(scene.width, scene.height),
+        )
+        findings.extend(exported_result.findings)
+        if not exported_result.valid:
+            return _result(findings)
 
     observed_shared: set[tuple[int, int]] = set()
     owner_by_segment: dict[Segment, list[tuple[int, Segment]]] = {}
@@ -462,6 +513,43 @@ def validate_multicolor_output(
             )
         )
     return _result(findings)
+
+
+def validate_stroke_output(
+    graph: CenterlineGraph,
+    model: WidthModel,
+    style: StrokeStyle,
+    *,
+    cut_outline: bool = False,
+) -> TopologyGeometryResult:
+    """Validate generated normal paths or closed cut outlines, not arbitrary SVG."""
+
+    graph_result = validate_centerline_graph(graph)
+    if not graph_result.valid:
+        return graph_result
+    filled = cut_outline or model.kind is WidthModelKind.VARIABLE
+    geometry = stroke_export_geometry(graph, model, style, cut_outline=cut_outline)
+    contours = tuple(
+        ValidationContour(
+            edge_id,
+            GeometryRole.CUT_OUTLINE
+            if cut_outline
+            else GeometryRole.FILL_CONTOUR
+            if filled
+            else GeometryRole.STROKE_CENTERLINE,
+            points,
+            closed,
+        )
+        for edge_id, points, closed in geometry
+    )
+    exported_result = validate_contours(
+        contours,
+        width=graph.width,
+        height=graph.height,
+        coordinate_decimals=4,
+        canvas_margin=max(graph.width, graph.height),
+    )
+    return _result((*graph_result.findings, *exported_result.findings))
 
 
 def validate_centerline_graph(graph: CenterlineGraph) -> TopologyGeometryResult:

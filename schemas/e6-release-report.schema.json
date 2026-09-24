@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vectorai.local/e6-release-report.schema.json",
+  "title": "VectorAI E6 Release Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "semantic_digest", "gate_digests", "comparison_background", "renderer_pairs", "renderer_rmse_limit", "evaluation"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "semantic_digest": { "$ref": "#/$defs/sha256" },
+    "gate_digests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["g2", "g3", "g4"],
+      "properties": {
+        "g2": { "$ref": "#/$defs/sha256" },
+        "g3": { "$ref": "#/$defs/sha256" },
+        "g4": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "comparison_background": { "const": "white" },
+    "renderer_pairs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "first", "second", "white_matte_rgba_rmse", "raw_alpha_rmse_observation"],
+        "properties": {
+          "case_id": { "type": "string", "minLength": 1 },
+          "first": { "enum": ["resvg", "chromium", "inkscape"] },
+          "second": { "enum": ["resvg", "chromium", "inkscape"] },
+          "white_matte_rgba_rmse": { "type": "number", "minimum": 0, "maximum": 1 },
+          "raw_alpha_rmse_observation": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "renderer_rmse_limit": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "g2_passed", "g3_passed", "g4_passed", "complete_renderer_matrix", "repeat_digests_match", "maximum_renderer_rmse", "renderer_pair_count"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "g2_passed": { "type": "boolean" },
+        "g3_passed": { "type": "boolean" },
+        "g4_passed": { "type": "boolean" },
+        "complete_renderer_matrix": { "type": "boolean" },
+        "repeat_digests_match": { "type": "boolean" },
+        "maximum_renderer_rmse": { "type": "number", "minimum": 0, "maximum": 1 },
+        "renderer_pair_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

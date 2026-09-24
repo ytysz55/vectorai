@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "semantic_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "gate_digests": {
+    "g2": "1111111111111111111111111111111111111111111111111111111111111111",
+    "g3": "2222222222222222222222222222222222222222222222222222222222222222",
+    "g4": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "comparison_background": "white",
+  "renderer_pairs": [
+    {
+      "case_id": "fixture-001",
+      "first": "resvg",
+      "second": "chromium",
+      "white_matte_rgba_rmse": 0.004,
+      "raw_alpha_rmse_observation": 0.2
+    }
+  ],
+  "renderer_rmse_limit": 0.08,
+  "evaluation": {
+    "passed": true,
+    "g2_passed": true,
+    "g3_passed": true,
+    "g4_passed": true,
+    "complete_renderer_matrix": true,
+    "repeat_digests_match": true,
+    "maximum_renderer_rmse": 0.004,
+    "renderer_pair_count": 1
+  }
+}

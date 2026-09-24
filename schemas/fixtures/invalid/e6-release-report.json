@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "semantic_digest": "invalid",
+  "gate_digests": {},
+  "comparison_background": "transparent",
+  "renderer_pairs": [],
+  "renderer_rmse_limit": -1,
+  "evaluation": { "passed": true }
+}

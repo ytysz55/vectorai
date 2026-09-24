@@ -9,7 +9,7 @@ import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -21,10 +21,12 @@ from vectorai_bench.metrics.fidelity import compare_rgba
 from vectorai_bench.metrics.topology import analyze_binary_mask
 from vectorai_bench.renderers import ResvgAdapter
 
+from .cut_ready import CutReadyPolicy, validate_cut_ready
 from .decode import DecodeLimits, decode_path
 from .errors import EngineError, EngineFailure, ErrorCode, RunStatus, Stage
 from .multicolor_pipeline import MulticolorPipelineConfig, run_multicolor_pipeline
 from .normalize import NormalizedImage, normalize_source
+from .observability import full_run_manifest, stage_events
 from .stroke_graph import CenterlineGraph, build_centerline_graph
 from .stroke_models import (
     estimate_width_profile,
@@ -39,7 +41,11 @@ from .stroke_selection import (
     arbitrate_fill_stroke,
     candidate_score,
 )
-from .topology_validation import raise_for_validation, validate_centerline_graph
+from .topology_validation import (
+    raise_for_validation,
+    validate_centerline_graph,
+    validate_stroke_output,
+)
 from .validation_report import geometry_validation_report
 
 
@@ -55,6 +61,8 @@ class StrokePipelineConfig:
     maximum_relative_width_variation: float = 0.25
     complexity_weight: float = 5.0e-4
     minimum_confident_margin: float = 0.005
+    cut_ready_policy: CutReadyPolicy | None = None
+    debug_opt_in: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,8 +206,13 @@ def run_stroke_pipeline(
     if not source_path.is_file():
         raise _failure(ErrorCode.UNSUPPORTED_INPUT, Stage.DECODE, "input image does not exist")
     started = time.perf_counter()
+    durations: dict[str, float] = {}
     source = decode_path(source_path, limits=config.decode_limits)
+    durations["decode"] = (time.perf_counter() - started) * 1000.0
+    normalize_started = time.perf_counter()
     normalized = normalize_source(source)
+    durations["normalize"] = (time.perf_counter() - normalize_started) * 1000.0
+    stroke_started = time.perf_counter()
     mask = _stroke_mask(normalized, config.foreground_threshold)
     routing = classify_fill_stroke(mask, config.routing)
     graph = build_centerline_graph(mask, minimum_spur_length=config.minimum_spur_length)
@@ -218,6 +231,7 @@ def run_stroke_pipeline(
     stroke_topology_exact = graph.component_count == foreground_topology.components
     reference = source.rgba
     color = _color_hex(reference, mask)
+    durations["stroke"] = (time.perf_counter() - stroke_started) * 1000.0
     renderer = ResvgAdapter(
         executable=config.resvg_executable,
         command_prefix=config.resvg_command_prefix,
@@ -229,6 +243,7 @@ def run_stroke_pipeline(
         tempfile.mkdtemp(prefix=f".{output_directory.name}-", dir=output_directory.parent)
     )
     try:
+        render_started = time.perf_counter()
         fill_directory = temporary / "fill-candidate"
         fill_bundle = run_multicolor_pipeline(
             source_path,
@@ -312,6 +327,18 @@ def run_stroke_pipeline(
             routing,
             minimum_confident_margin=config.minimum_confident_margin,
         )
+        if arbitration.selected.kind is HypothesisKind.STROKE:
+            selected_style = arbitration.selected.style
+            if selected_style is None:
+                raise _failure(
+                    ErrorCode.INTERNAL_INVARIANT_VIOLATION,
+                    Stage.MODEL_SELECTION,
+                    "selected stroke candidate has no style",
+                )
+            geometry_result = validate_stroke_output(graph, width_model, selected_style)
+            raise_for_validation(geometry_result)
+        durations["render_and_rank"] = (time.perf_counter() - render_started) * 1000.0
+        export_started = time.perf_counter()
         best_stroke = min(
             (item for item in evaluations if item.kind is HypothesisKind.STROKE),
             key=lambda item: (item.score, item.candidate_id),
@@ -330,29 +357,61 @@ def run_stroke_pipeline(
             color=color,
             output_path=cut_outline_path,
             cut_outline=True,
+            physical_size_mm=(
+                (
+                    config.cut_ready_policy.physical_width_mm,
+                    config.cut_ready_policy.physical_height_mm,
+                )
+                if config.cut_ready_policy is not None
+                else None
+            ),
         )
+        durations["export"] = (time.perf_counter() - export_started) * 1000.0
+        validation_started = time.perf_counter()
         cut_valid, cut_errors = validate_cut_outline(cut_outline_path)
+        cut_geometry = validate_stroke_output(
+            graph, width_model, best_stroke.style, cut_outline=True
+        )
         if not cut_valid:
             raise _failure(
                 ErrorCode.VALIDATION_FAILED,
                 Stage.VALIDATION,
                 "; ".join(cut_errors),
             )
+        if config.cut_ready_policy is not None:
+            cut_gate = validate_cut_ready(
+                graph,
+                width_model,
+                best_stroke.style,
+                config.cut_ready_policy,
+                generated_svg_path=cut_outline_path,
+            )
+            raise_for_validation(cut_gate)
         selected_svg, selected_preview = candidate_paths[arbitration.selected.candidate_id]
         svg_path = temporary / "output.svg"
         preview_path = temporary / "preview.png"
         shutil.copy2(selected_svg, svg_path)
         shutil.copy2(selected_preview, preview_path)
+        durations["validation"] = (time.perf_counter() - validation_started) * 1000.0
         validation_path = temporary / "validation-report.json"
-        _write_json(
-            validation_path,
-            geometry_validation_report(
-                geometry_result,
-                job_id=f"stroke-{source_sha256[:16]}",
-                source_sha256=source_sha256,
-                svg_bytes=svg_path.read_bytes(),
-            ),
+        validation_payload = geometry_validation_report(
+            geometry_result,
+            job_id=f"stroke-{source_sha256[:16]}",
+            source_sha256=source_sha256,
+            svg_bytes=svg_path.read_bytes(),
         )
+        if config.cut_ready_policy is not None:
+            gates = cast(list[dict[str, object]], validation_payload["gates"])
+            gates.append(
+                {
+                    "id": "CUT_READY.PHYSICAL_POLICY",
+                    "category": "cut_ready",
+                    "severity": "hard",
+                    "outcome": "passed",
+                    "message": "Physical cut geometry and SVG sizing passed all hard gates",
+                }
+            )
+        _write_json(validation_path, validation_payload)
         scene_path = temporary / "scene.json"
         _write_json(
             scene_path,
@@ -370,41 +429,86 @@ def run_stroke_pipeline(
                     "ranked": [_candidate_payload(item) for item in arbitration.ranked],
                 },
                 "cut_outline_valid": cut_valid,
+                "cut_outline_geometry_valid": cut_geometry.valid,
+                "cut_outline_geometry_findings": [asdict(item) for item in cut_geometry.findings],
+                "cut_ready": config.cut_ready_policy is not None,
             },
         )
+        event_path = temporary / "events.jsonl"
+        try:
+            event_path.write_bytes(
+                stage_events(
+                    durations,
+                    debug_opt_in=config.debug_opt_in,
+                    source_sha256=source_sha256,
+                )
+            )
+        except OSError as error:
+            raise _failure(
+                ErrorCode.EXPORT_FAILED, Stage.EXPORT, "cannot write stage events"
+            ) from error
+        renderer_identity = renderer.probe().identity
         manifest_path = temporary / "run-manifest.json"
+        legacy_manifest = {
+            "schema_version": "1.0.0",
+            "job_id": f"stroke-{source_sha256[:16]}",
+            "input": {
+                "sha256": source_sha256,
+                "bytes": len(source_bytes),
+                "media_type": source.media_type,
+            },
+            "configuration": {
+                "routing": asdict(config.routing),
+                "foreground_threshold": config.foreground_threshold,
+                "minimum_spur_length": config.minimum_spur_length,
+                "maximum_constant_width_mae": config.maximum_constant_width_mae,
+                "maximum_relative_width_variation": (config.maximum_relative_width_variation),
+                "complexity_weight": config.complexity_weight,
+                "determinism_policy": "strict",
+                "debug_opt_in": config.debug_opt_in,
+                **(
+                    {"cut_ready_policy": asdict(config.cut_ready_policy)}
+                    if config.cut_ready_policy is not None
+                    else {}
+                ),
+            },
+            "selected_candidate": arbitration.selected.candidate_id,
+            "best_stroke_candidate": best_stroke.candidate_id,
+            "final_status": arbitration.status.value,
+            "cut_outline_valid": cut_valid,
+            "cut_outline_geometry_valid": cut_geometry.valid,
+            "cut_ready": config.cut_ready_policy is not None,
+            "artifacts": [
+                "output.svg",
+                "preview.png",
+                "cut-outline.svg",
+                "scene.json",
+                "validation-report.json",
+            ],
+            "total_duration_ms": (time.perf_counter() - started) * 1000.0,
+            "renderer": {
+                "name": "resvg",
+                "version": (
+                    renderer_identity.version if renderer_identity is not None else "unknown"
+                ),
+            },
+            "warnings": [],
+            "summary": {
+                "regions": graph.component_count,
+                "edges": len(graph.edges),
+                "candidates": len(evaluations),
+                "optimizer_iterations": 0,
+            },
+        }
         _write_json(
             manifest_path,
-            {
-                "schema_version": "1.0.0",
-                "job_id": f"stroke-{source_sha256[:16]}",
-                "input": {
-                    "sha256": source_sha256,
-                    "bytes": len(source_bytes),
-                    "media_type": source.media_type,
-                },
-                "configuration": {
-                    "routing": asdict(config.routing),
-                    "foreground_threshold": config.foreground_threshold,
-                    "minimum_spur_length": config.minimum_spur_length,
-                    "maximum_constant_width_mae": config.maximum_constant_width_mae,
-                    "maximum_relative_width_variation": (config.maximum_relative_width_variation),
-                    "complexity_weight": config.complexity_weight,
-                    "determinism_policy": "strict",
-                },
-                "selected_candidate": arbitration.selected.candidate_id,
-                "best_stroke_candidate": best_stroke.candidate_id,
-                "final_status": arbitration.status.value,
-                "cut_outline_valid": cut_valid,
-                "artifacts": [
-                    "output.svg",
-                    "preview.png",
-                    "cut-outline.svg",
-                    "scene.json",
-                    "validation-report.json",
-                ],
-                "total_duration_ms": (time.perf_counter() - started) * 1000.0,
-            },
+            full_run_manifest(
+                legacy_manifest,
+                stage_durations=durations,
+                mode="cut_ready" if config.cut_ready_policy is not None else "geometric",
+                event_path=event_path,
+                artifact_root=temporary,
+            ),
         )
         temporary.replace(output_directory)
         return StrokePipelineBundle(

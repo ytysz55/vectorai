@@ -6,14 +6,15 @@ Deterministic, topology-first raster-to-vector reconstruction for logos, icons, 
 
 ## Status
 
-**E0 foundation, E1 benchmark harness, E2 binary, E3 multicolor/demo, and E4 stroke/line-art are complete.** Gates G0–G3 have passed; the next implementation phase is **E5 — global optimization**. The implementation order is deliberately gated:
+**E0–E6 are complete.** Locked gates G0–G4 and the Windows E6 release evidence passed. The next phase is **E7 — local job API and UI hardening**. The implementation order is deliberately gated:
 
 1. benchmark harness,
 2. binary vertical slice,
 3. mandatory multicolor reconstruction,
 4. stroke reconstruction,
 5. global optimization,
-6. local-first web UI hardening.
+6. topology/cut-ready validation, observability, and renderer release evidence,
+7. local job API and UI hardening.
 
 The binding product requirements and task list live in [`docs/PRD_MOTOR_GELISTIRME_PLANI.md`](docs/PRD_MOTOR_GELISTIRME_PLANI.md).
 
@@ -30,8 +31,8 @@ macOS is not an initial release target.
 React/TypeScript UI
         ↓ localhost
 FastAPI service
-        ↓ pybind11
-C++17 vector reconstruction engine
+        ↓ Python orchestration / native CLI
+C++17 binary reconstruction engine
 ```
 
 The engine remains native and offline-capable. It does not run in browser/WASM in the initial product.
@@ -111,6 +112,23 @@ uv run python tools/benchmark/run_stroke_g3.py \
 ```
 
 The locked 13-case G3 corpus records 92.31% routing accuracy, exact connectivity and junction valence, 0.5 px centerline p95, 0.337 px mean width error, 100% style/cut validation, and 54.95% node advantage over fill. The local web demo exposes this branch as **Stroke / line-art** and provides both editable stroke SVG and closed cut-outline SVG.
+
+## Verify the E6 release evidence
+
+The E6 gate consumes **independent** G2/G3/G4 runs and repeat runs, plus all 17 G2 cases rendered by resvg, Chromium, and Inkscape. Renderers are compared after white-matte compositing because Chromium screenshots are opaque; raw alpha deltas are recorded separately and are **not** a transparency agreement claim. A mismatch or incomplete matrix fails closed.
+
+```bash
+uv run python tools/benchmark/run_e6_release.py \
+  --g2-dir out/multicolor-g2-e6-real \
+  --g2-repeat out/multicolor-g2-e6-real-repeat \
+  --g3-dir out/stroke-g3-e6-cut \
+  --g3-repeat out/stroke-g3-e6-cut-repeat \
+  --g4-dir out/optimizer-g4-e6-observability \
+  --g4-repeat out/optimizer-g4-e6-observability-repeat \
+  --output out/e6-release-windows/e6-release-report.json
+```
+
+The locked Windows report passed 51 renderer comparisons (maximum white-matte RGBA RMSE `0.008444`, threshold `0.08`). The three G2/G3/G4 semantic digests matched their repeats. This is **Windows** evidence, not a claim of Linux three-renderer parity; portable unit tests run in CI. PDF is **not** a release backend: see [ADR-009](docs/adr/ADR-009-pdf-export-scope.md).
 
 ## Current dependency policy
 

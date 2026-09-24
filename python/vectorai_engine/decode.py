@@ -7,6 +7,7 @@ import io
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -105,7 +106,7 @@ def _check_dimensions(width: int, height: int, limits: DecodeLimits) -> None:
 def _convert_icc_to_srgb(image: Image.Image, icc_profile: bytes) -> Image.Image:
     try:
         source_profile = ImageCms.ImageCmsProfile(io.BytesIO(icc_profile))
-        target_profile = ImageCms.createProfile("sRGB")
+        target_profile = cast(Any, ImageCms.createProfile("sRGB"))
         alpha = image.getchannel("A") if "A" in image.getbands() else None
         converted = ImageCms.profileToProfile(
             image.convert("RGB"),
@@ -176,6 +177,8 @@ def decode_bytes(
                 _check_dimensions(oriented.width, oriented.height, active_limits)
                 icc_value = oriented.info.get("icc_profile")
                 if isinstance(icc_value, bytes) and icc_value:
+                    if len(icc_value) > 4 * 1024 * 1024:
+                        raise _failure(ErrorCode.RESOURCE_LIMIT, "ICC profile exceeds 4 MiB budget")
                     color_managed = _convert_icc_to_srgb(oriented, icc_value)
                     icc_digest = hashlib.sha256(icc_value).hexdigest()
                 else:
@@ -221,7 +224,14 @@ def decode_path(
                 "compressed raster exceeds input byte budget",
                 context={"input_bytes": str(size)},
             )
-        payload = path.read_bytes()
+        with path.open("rb") as handle:
+            payload = handle.read(active_limits.max_input_bytes + 1)
+        if len(payload) > active_limits.max_input_bytes:
+            raise _failure(
+                ErrorCode.RESOURCE_LIMIT,
+                "compressed raster exceeds input byte budget",
+                context={"input_bytes": str(len(payload))},
+            )
     except EngineFailure:
         raise
     except OSError as error:

@@ -1432,29 +1432,31 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 
 ## E6 — Validator, Cut-ready ve ürün sertleştirme — 14–17 gün
 
-- [ ] **VAL-001 — Full topology/geometric validator** — P1, 3 gün, bağımlılık: G4
+- [x] **VAL-001 — Full topology/geometric validator** — P1, 3 gün, bağımlılık: G4
   - **Kabul:** Open, duplicate, crossing, gap/overlap ve invariant testleri vardır.
 
-- [ ] **VAL-002 — Cut-ready kuralları** — P1, 3 gün, bağımlılık: VAL-001, ADR-013
+- [x] **VAL-002 — Cut-ready kuralları** — P1, 3 gün, bağımlılık: VAL-001, ADR-013
   - **Kabul:** Ölçü, minimum segment/gap ve closure hard gate çalışır.
 
-- [ ] **VAL-003 — Renderer agreement matrix** — P1, 2 gün, bağımlılık: VAL-001
+- [x] **VAL-003 — Renderer agreement matrix** — P1, 2 gün, bağımlılık: VAL-001
   - **Kabul:** resvg/Chromium/Inkscape farkları release raporunda görünür.
 
-- [ ] **OBS-001 — Structured logging** — P1, 1 gün, bağımlılık: ARC-004
+- [x] **OBS-001 — Structured logging** — P1, 1 gün, bağımlılık: ARC-004
   - **Kabul:** Stable event code ve stage span’leri JSONL üretir.
 
-- [ ] **OBS-002 — Full run manifest** — P1, 2 gün, bağımlılık: OBS-001, ARC-002
+- [x] **OBS-002 — Full run manifest** — P1, 2 gün, bağımlılık: OBS-001, ARC-002
   - **Kabul:** Run, artifact ve dependency bilgisi schema-validdir.
 
-- [ ] **OBS-003 — Privacy ve opt-in debug policy** — P1, 1 gün, bağımlılık: OBS-002, LEG-001
+- [x] **OBS-003 — Privacy ve opt-in debug policy** — P1, 1 gün, bağımlılık: OBS-002, LEG-001
   - **Kabul:** Default logda görüntü/path/metin yoktur.
 
-- [ ] **EXP-001 — PDF backend spike** — P2, 2 gün, bağımlılık: VAL-001, ADR-009
+- [x] **EXP-001 — PDF backend spike** — P2, 2 gün, bağımlılık: VAL-001, ADR-009
   - **Kabul:** Lisans, ölçü ve renderer uyumu kararı belgelenir; başarısızsa kapsam SVG’de kalır.
 
-- [ ] **SEC-001 — Resource limit ve sandbox hardening** — P1, 2 gün, bağımlılık: VAL-001
+- [x] **SEC-001 — Resource limit ve sandbox hardening** — P1, 2 gün, bağımlılık: VAL-001
   - **Kabul:** Timeout/memory/decode-bomb testleri geçer.
+
+**E6 kanıtı (Windows x86-64):** `out/e6-release-windows/e6-release-report.json` şemaya uygun ve başarılıdır. 17 G2 vakanın resvg/Chromium/Inkscape üçlü karşılaştırmasında 51 renderer çifti; beyaz arka plan bileşik görüntü RMSE maksimum `0.008444` (`0.08` sınırı). Chrome ekran görüntüsü opak beyaz olduğundan ham alpha uyuşmazlığı ayrıca *gözlem* olarak raporlanır ve sahte bir alpha eşdeğerliği iddia edilmez. G2/G3/G4 tekrar digestleri eşleşti; sırasıyla `af70104687b5f682e11ed19c3b5d0092ddc04c106e0763e3db2c456865cbe009`, `329d630a7bf009abb5b27fc30fa1224304b5508bccd4d3ca54b62caa42ecfb2d`, `cfb197b194c2a14a64e49748988e6cbce53f269c01f2c6ccbabf38480111d81a`. `232` Python testi, Ruff ve mypy geçti. PDF için 32 mm vektör/ölçü deneyi olumlu, fakat bağımsız PDF renderer/topoloji uyumu kanıtlanmadığı için [ADR-009](adr/ADR-009-pdf-export-scope.md) gereği release **SVG-only**. Dış araçların ortamı sanitize edilir, timeout ve girdi/piksel/bellek bütçeleri zorlanır; OS seviyesinde bellek sandbox'ı veya Linux üzerinde üçlü tam renderer matrisi **kanıtlanmış değildir**. E7 üretim dağıtımı öncesinde bunlar ayrı platform doğrulamasına tabidir.
 
 ## E7 — API, UI ve lokal yeniden işleme — 15 gün
 

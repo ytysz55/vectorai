@@ -11,6 +11,13 @@ from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from vectorai_engine.errors import EngineFailure, ErrorCode, Stage
 from vectorai_engine.stroke_graph import build_centerline_graph
+from vectorai_engine.stroke_models import (
+    StrokeCap,
+    StrokeJoin,
+    StrokeStyle,
+    estimate_width_profile,
+    select_width_model,
+)
 from vectorai_engine.topology_validation import (
     GeometryRole,
     TopologyGeometryResult,
@@ -18,6 +25,7 @@ from vectorai_engine.topology_validation import (
     raise_for_validation,
     validate_centerline_graph,
     validate_contours,
+    validate_stroke_output,
 )
 from vectorai_engine.validation_report import geometry_validation_report
 
@@ -160,6 +168,25 @@ def test_explicitly_closed_ring_is_a_valid_centerline() -> None:
 
     assert result.valid, result.findings
     assert graph.edges[0].start_node == graph.edges[0].end_node
+
+
+def test_cut_geometry_rejects_self_crossing_ring_but_accepts_line() -> None:
+    style = StrokeStyle(StrokeCap.ROUND, StrokeJoin.BEVEL)
+    line = np.zeros((50, 80), dtype=np.bool_)
+    line[20:29, 8:65] = True
+    line_graph = build_centerline_graph(line)
+    line_model = select_width_model(estimate_width_profile(line, line_graph), line_graph)
+    assert validate_stroke_output(line_graph, line_model, style).valid
+    assert validate_stroke_output(line_graph, line_model, style, cut_outline=True).valid
+
+    ring = np.zeros((50, 80), dtype=np.bool_)
+    ring[7:43, 12:48] = True
+    ring[14:36, 19:41] = False
+    ring_graph = build_centerline_graph(ring)
+    ring_model = select_width_model(estimate_width_profile(ring, ring_graph), ring_graph)
+    cut = validate_stroke_output(ring_graph, ring_model, style, cut_outline=True)
+    assert not cut.valid
+    assert "GEOMETRY.CROSSING" in codes(cut)
 
 
 def test_centerline_degree_corruption_is_rejected() -> None:

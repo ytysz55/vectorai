@@ -102,9 +102,8 @@ def _composite_lut() -> npt.NDArray[np.uint8]:
     channels = np.arange(256, dtype=np.float64) / 255.0
     alpha = channels
     backgrounds = np.asarray((0.0, 0.75, 0.95, 1.0), dtype=np.float64)
-    values = (
-        channels[None, None, :] * alpha[None, :, None]
-        + backgrounds[:, None, None] * (1.0 - alpha[None, :, None])
+    values = channels[None, None, :] * alpha[None, :, None] + backgrounds[:, None, None] * (
+        1.0 - alpha[None, :, None]
     )
     return np.rint(np.clip(values, 0.0, 1.0) * 255.0).astype(np.uint8)
 

@@ -14,6 +14,7 @@ from vectorai_engine.multicolor_graph import MulticolorRegionGraph, build_multic
 from vectorai_engine.multicolor_scene import (
     SelectedFace,
     export_multicolor_svg,
+    exported_face_cycles,
     select_multicolor_scene,
 )
 from vectorai_engine.normalize import normalize_source
@@ -22,6 +23,7 @@ from vectorai_engine.primitives import PrimitiveKind, recover_closed_primitives
 from vectorai_engine.reliability import analyze_reliability
 from vectorai_engine.segmentation import segment_multicolor
 from vectorai_engine.shared_boundary import SharedBoundaryAssembly, assemble_shared_boundaries
+from vectorai_engine.topology_validation import validate_multicolor_output
 
 
 def source() -> Image.Image:
@@ -118,6 +120,12 @@ def test_isolated_curves_export_primitives_and_smoothed_paths(tmp_path: Path) ->
     editability = manifest["editability"]
     assert isinstance(editability, dict)
     assert editability["node_count"] < len(circle) + len(irregular)
+    sampled = exported_face_cycles(curved)
+    assert len(sampled) == 2
+    assert all(face_id == 1 for face_id, _ in sampled)
+    assert len(sampled[0][1]) > len(circle)
+    assert len(sampled[1][1]) > len(irregular)
+    assert exported_face_cycles(curved) == sampled
 
 
 def test_shared_boundary_scene_keeps_raw_canonical_cycles() -> None:
@@ -146,6 +154,31 @@ def test_shared_boundary_scene_keeps_raw_canonical_cycles() -> None:
     assert " Q" not in payload
     assert " A" not in payload
     assert 'stroke-width="2"' in payload
+
+
+def test_partial_shared_chain_gap_is_hard_even_if_another_segment_matches() -> None:
+    palette, graph, assembly = scene()
+    selected = select_multicolor_scene(graph, palette, assembly)
+    changed_faces: list[SelectedFace] = []
+    for face in selected.faces:
+        cycle = face.cycles[0]
+        split: list[tuple[float, float]] = []
+        for index, point in enumerate(cycle):
+            following = cycle[(index + 1) % len(cycle)]
+            shared_edge = point[0] == following[0] == 18.0 and {point[1], following[1]} == {
+                0.0,
+                20.0,
+            }
+            split.append((17.9, 0.0) if face.face_id == 1 and point == (18.0, 0.0) else point)
+            if shared_edge:
+                split.append((18.0, 10.0))
+        changed_faces.append(replace(face, cycles=(tuple(split),)))
+    corrupted = replace(selected, faces=tuple(changed_faces))
+
+    result = validate_multicolor_output(graph, assembly, corrupted)
+
+    assert not result.valid
+    assert any(finding.code == "GEOMETRY.SHARED_BOUNDARY_GAP" for finding in result.findings)
 
 
 def test_scene_export_is_byte_deterministic() -> None:

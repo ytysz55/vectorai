@@ -71,12 +71,8 @@ def _statistics(image: NormalizedImage, palette: PaletteResult) -> tuple[_ColorS
         result.append(
             _ColorStatistics(
                 weight_sum=_finite_float(np.sum(weights), "color weight sum"),
-                weighted_linear_sum=_triple(
-                    np.sum(colors * weights[:, None], axis=0)
-                ),
-                weighted_square_sum=_triple(
-                    np.sum(colors * colors * weights[:, None], axis=0)
-                ),
+                weighted_linear_sum=_triple(np.sum(colors * weights[:, None], axis=0)),
+                weighted_square_sum=_triple(np.sum(colors * colors * weights[:, None], axis=0)),
             )
         )
     return tuple(result)
@@ -88,9 +84,7 @@ def _candidate_colors(
     maximum_delta: float,
 ) -> tuple[tuple[float, float, float], ...]:
     colors: list[tuple[float, float, float]] = []
-    for index, (block, values) in enumerate(
-        zip(parameters.blocks, parameters.values, strict=True)
-    ):
+    for index, (block, values) in enumerate(zip(parameters.blocks, parameters.values, strict=True)):
         if block.kind is not ParameterKind.COLOR:
             raise ValueError("palette refinement received a non-color parameter block")
         if block.stable_id != f"color-{index:04d}":
@@ -117,9 +111,7 @@ def _analytic_rmse(
         linear_sum = np.asarray(stats.weighted_linear_sum, dtype=np.float64)
         square_sum = np.asarray(stats.weighted_square_sum, dtype=np.float64)
         error_terms = _triple(
-            square_sum
-            - 2.0 * color * linear_sum
-            + color * color * stats.weight_sum
+            square_sum - 2.0 * color * linear_sum + color * color * stats.weight_sum
         )
         squared_error += sum(error_terms)
     return math.sqrt(max(0.0, squared_error) / (4.0 * pixel_count))
@@ -165,9 +157,7 @@ def refine_palette_colors(
             kind=ParameterKind.COLOR,
             initial=(0.0, 0.0, 0.0),
             lower=tuple(max(-1.0, -channel / maximum_delta) for channel in color.rgb_srgb),
-            upper=tuple(
-                min(1.0, (1.0 - channel) / maximum_delta) for channel in color.rgb_srgb
-            ),
+            upper=tuple(min(1.0, (1.0 - channel) / maximum_delta) for channel in color.rgb_srgb),
         )
         for index, color in enumerate(palette.selected.colors)
     )

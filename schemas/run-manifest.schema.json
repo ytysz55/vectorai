@@ -46,6 +46,15 @@
         "minLength": 1
       }
     },
+    "renderer": { "type": "object" },
+    "auxiliary_renderers": { "type": "array", "items": { "type": "object" } },
+    "seams": { "type": "object" },
+    "selected_candidate": { "type": "string" },
+    "best_stroke_candidate": { "type": "string" },
+    "cut_outline_valid": { "type": "boolean" },
+    "cut_outline_geometry_valid": { "type": "boolean" },
+    "cut_ready": { "type": "boolean" },
+    "total_duration_ms": { "type": "number", "minimum": 0 },
     "stages": {
       "type": "array",
       "items": {
@@ -162,7 +171,8 @@
         },
         "determinism_policy": {
           "const": "strict"
-        }
+        },
+        "parameters": { "type": "object" }
       }
     },
     "platform": {

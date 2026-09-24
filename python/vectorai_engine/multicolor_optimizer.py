@@ -52,6 +52,8 @@ class MulticolorOptimizationResult:
     rejected_tolerances: tuple[tuple[float, str], ...]
     render_rank: RenderRankResult
     stage_timings: tuple[OptimizationStageTiming, ...]
+    continuous_iterations: int
+    continuous_evaluations: int
 
 
 def _candidate_tolerances(baseline: float, profile: OptimizationProfile) -> tuple[float, ...]:
@@ -230,6 +232,8 @@ def optimize_multicolor_hypotheses(
         candidates=tuple(records),
         rejected_tolerances=tuple(rejected),
         render_rank=ranked,
+        continuous_iterations=refinement.optimization.iterations,
+        continuous_evaluations=refinement.optimization.evaluations,
         stage_timings=(
             OptimizationStageTiming("scene_selection", scene_selection_ms),
             OptimizationStageTiming("export_editability", export_editability_ms),

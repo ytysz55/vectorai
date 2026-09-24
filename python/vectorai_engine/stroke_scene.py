@@ -165,6 +165,29 @@ def _outline_polygon(
     return tuple(left + list(reversed(right)))
 
 
+def stroke_export_geometry(
+    graph: CenterlineGraph,
+    model: WidthModel,
+    style: StrokeStyle,
+    *,
+    cut_outline: bool = False,
+) -> tuple[tuple[int, tuple[tuple[float, float], ...], bool], ...]:
+    """Return the exact paths chosen by the normal/cut SVG serializer."""
+
+    return tuple(
+        (
+            edge.edge_id,
+            _outline_polygon(graph, edge, model, style)
+            if cut_outline or model.kind is WidthModelKind.VARIABLE
+            else _edge_points(graph, edge, model.constant_width, style.cap),
+            True
+            if cut_outline or model.kind is WidthModelKind.VARIABLE
+            else edge.start_node == edge.end_node,
+        )
+        for edge in graph.edges
+    )
+
+
 def export_stroke_svg(
     graph: CenterlineGraph,
     model: WidthModel,
@@ -173,23 +196,29 @@ def export_stroke_svg(
     color: str,
     output_path: Path | None = None,
     cut_outline: bool = False,
+    physical_size_mm: tuple[float, float] | None = None,
 ) -> tuple[str, dict[str, object]]:
     if not color.startswith("#") or len(color) != 7:
         raise ValueError("stroke color must be canonical #rrggbb")
+    if physical_size_mm is not None and not cut_outline:
+        raise ValueError("physical dimensions require a cut-outline export")
+    size = (
+        (f"{_number(physical_size_mm[0])}mm", f"{_number(physical_size_mm[1])}mm")
+        if physical_size_mm is not None
+        else (str(graph.width), str(graph.height))
+    )
     lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{graph.width}" '
-        f'height="{graph.height}" viewBox="0 0 {graph.width} {graph.height}">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size[0]}" '
+        f'height="{size[1]}" viewBox="0 0 {graph.width} {graph.height}">'
     ]
-    for edge in graph.edges:
-        closed = edge.start_node == edge.end_node
+    geometry = stroke_export_geometry(graph, model, style, cut_outline=cut_outline)
+    for edge, (edge_id, points, closed) in zip(graph.edges, geometry, strict=True):
         if cut_outline or model.kind is WidthModelKind.VARIABLE:
-            polygon = _outline_polygon(graph, edge, model, style)
             lines.append(
-                f'  <path data-stroke-edge="{edge.edge_id}" fill="{color}" '
-                f'stroke="none" d="{_path_data(polygon, closed=True)}"/>'
+                f'  <path data-stroke-edge="{edge_id}" fill="{color}" '
+                f'stroke="none" d="{_path_data(points, closed=True)}"/>'
             )
         else:
-            points = _edge_points(graph, edge, model.constant_width, style.cap)
             lines.append(
                 f'  <path data-stroke-edge="{edge.edge_id}" fill="none" '
                 f'stroke="{color}" stroke-width="{_number(model.constant_width)}" '
@@ -207,6 +236,8 @@ def export_stroke_svg(
         "style": asdict(style),
         "cut_outline": cut_outline,
     }
+    if physical_size_mm is not None:
+        manifest["physical_size_mm"] = physical_size_mm
     if output_path is not None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(payload, encoding="utf-8", newline="\n")
@@ -217,7 +248,12 @@ def export_stroke_svg(
 def validate_cut_outline(svg_path: Path) -> tuple[bool, tuple[str, ...]]:
     errors: list[str] = []
     try:
-        root = ElementTree.fromstring(svg_path.read_bytes())
+        if svg_path.stat().st_size > 8_388_608:
+            return False, ("cut-outline SVG exceeds 8 MiB limit",)
+        payload = svg_path.read_bytes()
+        if b"<!DOCTYPE" in payload.upper() or b"<!ENTITY" in payload.upper():
+            return False, ("cut-outline SVG contains a forbidden XML declaration",)
+        root = ElementTree.fromstring(payload)
     except (OSError, ElementTree.ParseError) as error:
         return False, (f"invalid cut-outline SVG: {error}",)
     paths = [element for element in root.iter() if element.tag.rsplit("}", 1)[-1] == "path"]

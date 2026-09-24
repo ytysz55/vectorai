@@ -93,9 +93,7 @@ def compare_prepared_rgba(
 ) -> FidelityMetrics:
     if reference.alpha.shape != predicted.alpha.shape:
         raise ValueError("reference and predicted RGBA shapes must match")
-    rgb_error = np.abs(
-        reference.premultiplied_linear_rgb - predicted.premultiplied_linear_rgb
-    )
+    rgb_error = np.abs(reference.premultiplied_linear_rgb - predicted.premultiplied_linear_rgb)
     alpha_error = np.abs(reference.alpha - predicted.alpha)
     rgba_error = np.concatenate((rgb_error, alpha_error), axis=2)
     try:

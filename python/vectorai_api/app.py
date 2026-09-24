@@ -31,6 +31,8 @@ ARTIFACT_MEDIA_TYPES = {
     "preview.png": "image/png",
     "scene.json": "application/json",
     "run-manifest.json": "application/json",
+    "validation-report.json": "application/json",
+    "events.jsonl": "application/x-ndjson",
     "cut-outline.svg": "image/svg+xml",
 }
 
@@ -95,6 +97,15 @@ def _safe_filename(request: Request) -> str:
     raise HTTPException(status_code=415, detail="only PNG and JPEG uploads are accepted")
 
 
+async def read_bounded_body(request: Request, max_bytes: int) -> bytes:
+    buffered = bytearray()
+    async for chunk in request.stream():
+        if len(buffered) + len(chunk) > max_bytes:
+            raise HTTPException(status_code=413, detail="request exceeds local upload limit")
+        buffered.extend(chunk)
+    return bytes(buffered)
+
+
 def create_app(settings: ApiSettings) -> FastAPI:
     if settings.max_upload_bytes < 1 or settings.max_upload_bytes > MAX_UPLOAD_BYTES:
         raise ValueError(f"max_upload_bytes must be in [1, {MAX_UPLOAD_BYTES}]")
@@ -138,7 +149,8 @@ def create_app(settings: ApiSettings) -> FastAPI:
                 status_code=415,
                 detail="content-type must be image/png or image/jpeg",
             )
-        source_bytes = await request.body()
+        # Do not buffer an unbounded chunked request before enforcing the limit.
+        source_bytes = await read_bounded_body(request, settings.max_upload_bytes)
         if not source_bytes:
             raise HTTPException(status_code=400, detail="request body is empty")
         if len(source_bytes) > settings.max_upload_bytes:
@@ -156,7 +168,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         except OSError as error:
             raise HTTPException(
                 status_code=500,
-                detail=f"cannot store local upload: {error}",
+                detail="cannot store local upload",
             ) from error
         try:
             if mode == "stroke":
@@ -200,7 +212,7 @@ def create_app(settings: ApiSettings) -> FastAPI:
         except (OSError, ValueError, KeyError, TypeError) as error:
             raise HTTPException(
                 status_code=500,
-                detail=f"local pipeline failed: {error}",
+                detail="local pipeline failed",
             ) from error
         artifacts = {name: f"/v1/jobs/{job_id}/artifacts/{name}" for name in artifact_names}
         if status is RunStatus.FAILED:

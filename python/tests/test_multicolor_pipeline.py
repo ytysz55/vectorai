@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
+from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 from PIL import Image
 from python.tests._support import RGBA_PNG_WRITER_SOURCE, active_python_executable
 
@@ -80,6 +82,11 @@ def test_multicolor_pipeline_writes_atomic_scene_bundle(tmp_path: Path) -> None:
     assert scene["graph"]["face_count"] == 3
     assert len(scene["shared_boundaries"]["seam_pairs"]) == 2
     assert manifest["final_status"] == "success"
+    schema = json.loads((ROOT / "schemas/run-manifest.schema.json").read_text(encoding="utf-8"))
+    cast(Any, Draft202012Validator(schema)).validate(manifest)
+    events = (bundle.output_directory / "events.jsonl").read_text(encoding="utf-8")
+    assert "STAGE_COMPLETED" in events
+    assert str(source) not in events
     validation = json.loads(bundle.validation_path.read_text(encoding="utf-8"))
     assert validation["status"] == "passed"
     assert validation["summary"]["hard_failures"] == 0
@@ -88,6 +95,7 @@ def test_multicolor_pipeline_writes_atomic_scene_bundle(tmp_path: Path) -> None:
         "preview.png",
         "scene.json",
         "validation-report.json",
+        "events.jsonl",
     }
 
 
@@ -185,7 +193,7 @@ def test_optimizer_failure_uses_validated_degraded_fallback(tmp_path: Path) -> N
         "status": "degraded",
     }
     assert manifest["final_status"] == "degraded"
-    assert manifest["warnings"][-1] == "optimizer fallback: ValueError"
+    assert manifest["fallbacks"][-1]["code"] == "OPTIMIZER_FALLBACK"
 
 
 def test_pipeline_records_required_three_renderer_seam_matrix(tmp_path: Path) -> None:
@@ -216,6 +224,7 @@ def test_pipeline_records_required_three_renderer_seam_matrix(tmp_path: Path) ->
         "preview-inkscape.png",
         "scene.json",
         "validation-report.json",
+        "events.jsonl",
     }
 
 
