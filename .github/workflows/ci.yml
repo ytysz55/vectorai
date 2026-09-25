@@ -57,6 +57,14 @@ jobs:
           uv sync --python ${{ matrix.sync_python }}
           --locked --all-extras --dev
 
+      - name: Build offline distribution wheel
+        run: uv build --wheel --out-dir out/distribution
+
+      - name: Verify bundled optimizer profiles outside source tree
+        run: >-
+          ${{ matrix.python }} tools/inspect/verify_wheel_profiles.py
+          out/distribution
+
       - name: Validate Python and JSON contracts
         run: >-
           ${{ matrix.python }} -m pytest
