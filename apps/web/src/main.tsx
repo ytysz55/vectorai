@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ComparisonPanel } from "./ComparisonPanel";
 import { MODE_OPTIONS, errorDetail, isJobStatus, isMode, isPublished, isTerminal } from "./jobApi";
 import type { JobStatus, Mode } from "./jobApi";
 import "./styles.css";
@@ -155,23 +156,13 @@ function App() {
         </p>
       )}
       {error && <p className="error" role="alert">{error}</p>}
-      {(sourceUrl || job) && (
-        <section className="comparison">
-          <article className="panel visual">
-            <h2>Source raster</h2>
-            {sourceUrl && <img alt="Uploaded source raster" src={sourceUrl} />}
-          </article>
-          <article className="panel visual">
-            <h2>Editable vector result</h2>
-            {artifactUrl("preview.png") ? (
-              <img alt="Rendered vector preview" src={artifactUrl("preview.png")} />
-            ) : (
-              <div className="placeholder">
-                {activeJob ? "Local reconstruction in progress" : "No validated preview available"}
-              </div>
-            )}
-          </article>
-        </section>
+      {sourceUrl && (
+        <ComparisonPanel
+          key={`${sourceUrl}:${job?.job_id ?? ""}`}
+          sourceUrl={sourceUrl}
+          vectorUrl={job && artifactUrl("output.svg")
+            ? `${API_ORIGIN}/v1/jobs/${job.job_id}/preview.svg` : ""}
+        />
       )}
       {job && (
         <section className="metrics panel">

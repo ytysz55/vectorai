@@ -23,11 +23,20 @@ button:disabled { opacity: .55; cursor: wait; }
 .cancel { background: #292239; color: #ffb4b4; border: 1px solid #885b67; }
 .job-state { font: 12px ui-monospace, "Cascadia Mono", monospace; color: #a8c0eb; overflow-wrap: anywhere; }
 .file-picker:has(input:disabled) { opacity: .55; cursor: wait; }
-.comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
-.visual { overflow: hidden; min-height: 300px; }
+.comparison-section { margin-top: 22px; }
+.comparison-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; color: #b7c0d7; font-size: 12px; }
+.zoom-controls { display: flex; align-items: center; gap: 8px; }
+.zoom-controls button { height: 35px; }
+.zoom-controls output { min-width: 52px; text-align: center; font: 12px ui-monospace, monospace; }
+.baseline-picker { flex-basis: 100%; }
+.baseline-picker input { color: #cbd7f2; }
+.comparison-note { color: #9eb0d8; font-size: 12px; line-height: 1.6; }
+.comparison { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+.visual { overflow: hidden; min-width: 0; min-height: 300px; }
+.compare-canvas { display: block; width: 100%; height: 280px; touch-action: none; cursor: grab; background: repeating-conic-gradient(#151c2c 0 25%, #1a2338 0 50%) 50% / 18px 18px; }
+.compare-canvas.is-dragging { cursor: grabbing; }
 h2 { font-size: 14px; margin: 0; padding: 15px 17px; border-bottom: 1px solid #293451; }
-.visual img { display: block; width: 100%; min-height: 258px; object-fit: contain; background: repeating-conic-gradient(#151c2c 0 25%, #1a2338 0 50%) 50% / 18px 18px; }
-.placeholder { color: #6f80a7; height: 258px; display: grid; place-items: center; font-size: 13px; }
+.placeholder { color: #9eb0d8; height: 280px; display: grid; place-items: center; font-size: 13px; }
 .metrics { margin-top: 18px; padding: 0 17px 18px; }
 .metrics h2 { padding-left: 0; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 17px 0; }
@@ -38,4 +47,5 @@ h2 { font-size: 14px; margin: 0; padding: 15px 17px; border-bottom: 1px solid #2
 a { color: #b9c9ff; font: 12px ui-monospace, "Cascadia Mono", monospace; border: 1px solid #40578d; border-radius: 7px; padding: 8px; text-decoration: none; }
 .error { color: #ffb4b4; font-size: 13px; }
 footer { padding-top: 48px; }
-@media (max-width: 720px) { .controls, .controls:has(.cancel), .comparison { grid-template-columns: 1fr; } .metric-grid { grid-template-columns: 1fr 1fr; } .hero { padding-top: 60px; } }
+@media (max-width: 900px) { .comparison { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .controls, .controls:has(.cancel) { grid-template-columns: 1fr; } .metric-grid { grid-template-columns: 1fr 1fr; } .hero { padding-top: 60px; } }

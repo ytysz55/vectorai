@@ -76,6 +76,13 @@ def test_job_upload_status_cancel_and_artifact_contract(tmp_path: Path) -> None:
         assert "cut-outline.svg" not in final["artifacts"]
         artifact_status, svg, _ = request(f"{base}{final['artifacts']['output.svg']}")
         assert artifact_status == 200 and b"<svg" in svg
+        inline_status, inline_svg, inline_headers = request(f"{base}/v1/jobs/{job_id}/preview.svg")
+        assert inline_status == 200 and inline_svg == svg
+        assert inline_headers["content-disposition"].startswith("inline;")
+        assert inline_headers["content-security-policy"] == (
+            "sandbox; default-src 'none'; img-src 'none'; style-src 'none'"
+        )
+        assert inline_headers["x-content-type-options"] == "nosniff"
         manifest_status, manifest_body, _ = request(
             f"{base}{final['artifacts']['run-manifest.json']}"
         )
@@ -94,6 +101,8 @@ def test_job_upload_status_cancel_and_artifact_contract(tmp_path: Path) -> None:
         else:
             unsafe_status, _, _ = request(f"{base}{final['artifacts']['output.svg']}")
             assert unsafe_status == 404
+            unsafe_preview, _, _ = request(f"{base}/v1/jobs/{job_id}/preview.svg")
+            assert unsafe_preview == 404
         cancel_status, _, _ = request(f"{base}/v1/jobs/{job_id}/cancel", method="POST", body=b"")
         assert cancel_status == 409
         missing_status, _, _ = request(f"{base}/v1/jobs/../escape")
@@ -126,6 +135,8 @@ def test_job_upload_status_cancel_and_artifact_contract(tmp_path: Path) -> None:
         assert invalid == 202
         failed = _poll(base, json.loads(body)["job_id"], target=TERMINAL)
         assert failed["state"] == "failed"
+        failed_preview, _, _ = request(f"{base}/v1/jobs/{failed['job_id']}/preview.svg")
+        assert failed_preview == 404
         assert failed["error"]["code"] in {"DECODE_ERROR", "UNSUPPORTED_INPUT"}
         assert "input.png" not in failed["error"]["message"]
         _validate(failed)
@@ -167,10 +178,14 @@ def test_running_job_cancel_kills_worker_and_releases_slot(tmp_path: Path) -> No
         assert busy == 429 and json.loads(busy_body)["detail"]["code"] == "RESOURCE_LIMIT"
         preview_status, _, _ = request(f"{base}/v1/jobs/{job_id}/artifacts/preview.png")
         assert preview_status == 404
+        inline_pending, _, _ = request(f"{base}/v1/jobs/{job_id}/preview.svg")
+        assert inline_pending == 404
         canceled, _, _ = request(f"{base}/v1/jobs/{job_id}/cancel", method="POST", body=b"")
         assert canceled == 200
         final = _poll(base, job_id, target=TERMINAL)
         assert final["state"] == "canceled"
+        canceled_preview, _, _ = request(f"{base}/v1/jobs/{job_id}/preview.svg")
+        assert canceled_preview == 404
         assert final["artifacts"] == {}
         _validate(final)
         status, body, _ = request(f"{base}/v1/jobs", body=image_bytes(), headers=headers)

@@ -396,12 +396,28 @@ def create_app(settings: ApiSettings) -> FastAPI:
             raise HTTPException(status_code=404, detail="artifact does not exist") from error
         return FileResponse(artifact_path, media_type=media_type, filename=artifact_name)
 
+    def vector_preview(job_id: str) -> FileResponse:
+        # Unlike the legacy demo artifact route, this view requires a published E7 job.
+        try:
+            if not manager.can_download(job_id):
+                raise HTTPException(status_code=404, detail="artifact is not published")
+        except FileNotFoundError as error:
+            raise HTTPException(status_code=404, detail="unknown job") from error
+        response = artifact_response(job_id, "output.svg")
+        response.headers["content-disposition"] = 'inline; filename="output.svg"'
+        response.headers["content-security-policy"] = (
+            "sandbox; default-src 'none'; img-src 'none'; style-src 'none'"
+        )
+        response.headers["x-content-type-options"] = "nosniff"
+        return response
+
     app.get("/health")(health_response)
     app.post("/v1/vectorize", responses={422: {"description": "engine failed"}})(vectorize_response)
     app.post("/v1/jobs", status_code=202)(submit_job)
     app.get("/v1/jobs/{job_id}")(job_status)
     app.post("/v1/jobs/{job_id}/cancel")(cancel_job)
     app.get("/v1/jobs/{job_id}/artifacts/{artifact_name}")(artifact_response)
+    app.get("/v1/jobs/{job_id}/preview.svg")(vector_preview)
     return app
 
 

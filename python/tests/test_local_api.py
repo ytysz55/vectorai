@@ -141,6 +141,8 @@ def test_loopback_api_vectorizes_and_serves_confined_artifacts(tmp_path: Path) -
         assert svg_status == 200
         assert headers["content-type"].startswith("image/svg+xml")
         assert b"<svg" in svg
+        legacy_preview, _, _ = request(f"{base_url}/v1/jobs/{payload['job_id']}/preview.svg")
+        assert legacy_preview == 404
         stroke_status, stroke_body, _ = request(
             f"{base_url}/v1/vectorize",
             body=stroke_image_bytes(),

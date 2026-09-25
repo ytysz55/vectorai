@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { stripTypeScriptTypes } from "node:module";
 import test from "node:test";
+import { loadTs } from "./loadTs.mjs";
 
-const source = readFileSync(new URL("../src/jobApi.ts", import.meta.url), "utf8");
-const compiled = stripTypeScriptTypes(source);
 const { MODE_OPTIONS, errorDetail, isJobStatus, isMode, isPublished, isTerminal } =
-  await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(compiled)}`);
+  await loadTs("../src/jobApi.ts");
 
 const jobId = `${"a".repeat(64)}-123456789abc`;
 const valid = {
