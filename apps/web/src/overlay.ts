@@ -94,9 +94,15 @@ export function parseInspectionOverlay(value: unknown, size: ImageSize): Inspect
 }
 
 export async function readBoundedJson(response: Response): Promise<unknown> {
-  if (!response.ok) throw new Error("Local evidence artifact is unavailable.");
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error("Local evidence artifact is unavailable.");
+  }
   const claimed = response.headers.get("content-length");
-  if (claimed && Number(claimed) > MAX_OVERLAY_BYTES) throw new Error("Local scene metadata exceeds the inspection budget.");
+  if (claimed && Number(claimed) > MAX_OVERLAY_BYTES) {
+    await response.body?.cancel();
+    throw new Error("Local scene metadata exceeds the inspection budget.");
+  }
   if (!response.body) throw new Error("Local scene response has no body.");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
