@@ -28,3 +28,4 @@ Statuses: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
 - [`ADR-019-idempotent-local-queue.md`](ADR-019-idempotent-local-queue.md)
 - [`ADR-020-e7-optimized-job-modes.md`](ADR-020-e7-optimized-job-modes.md)
 - [`ADR-021-local-comparison-coordinate-contract.md`](ADR-021-local-comparison-coordinate-contract.md)
+- [`ADR-022-inspection-overlay-provenance.md`](ADR-022-inspection-overlay-provenance.md)

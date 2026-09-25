@@ -162,6 +162,7 @@ function App() {
           sourceUrl={sourceUrl}
           vectorUrl={job && artifactUrl("output.svg")
             ? `${API_ORIGIN}/v1/jobs/${job.job_id}/preview.svg` : ""}
+          inspectionUrl={job?.mode !== "stroke" ? artifactUrl("scene.json") : ""}
         />
       )}
       {job && (

@@ -128,7 +128,9 @@ def test_http_faithful_and_minimal_use_distinct_pinned_profiles(tmp_path: Path) 
             assert job["state"] == "success", job
             scene_code, scene_body, _ = request(f"{base}{job['artifacts']['scene.json']}")
             assert scene_code == 200
-            optimizer = json.loads(scene_body)["optimizer"]
+            scene_payload = json.loads(scene_body)
+            assert scene_payload["inspection_overlay"]["available"] is True
+            optimizer = scene_payload["optimizer"]
             assert optimizer["status"] == "success"
             assert optimizer["mode"] == mode
             profile_hashes.add(optimizer["profile_sha256"])

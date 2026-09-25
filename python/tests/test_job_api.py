@@ -83,6 +83,13 @@ def test_job_upload_status_cancel_and_artifact_contract(tmp_path: Path) -> None:
             "sandbox; default-src 'none'; img-src 'none'; style-src 'none'"
         )
         assert inline_headers["x-content-type-options"] == "nosniff"
+        scene_status, scene_body, _ = request(f"{base}{final['artifacts']['scene.json']}")
+        assert scene_status == 200
+        inspection = json.loads(scene_body)["inspection_overlay"]
+        assert inspection["available"] is True
+        assert [face["id"] for face in inspection["faces"]] == ["face-1", "face-2"]
+        assert inspection["nodes"]
+        assert inspection["shared_edges"]
         manifest_status, manifest_body, _ = request(
             f"{base}{final['artifacts']['run-manifest.json']}"
         )

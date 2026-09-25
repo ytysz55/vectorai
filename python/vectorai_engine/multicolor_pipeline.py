@@ -27,6 +27,7 @@ from .observability import full_run_manifest, stage_events
 from .palette import PaletteConfig, generate_palette_hypotheses
 from .profiles import OptimizationMode, load_optimizer_profiles
 from .reliability import analyze_reliability
+from .scene_overlay import multicolor_scene_overlay
 from .segmentation import SpatialSegmentationConfig, segment_multicolor
 from .shared_boundary import assemble_shared_boundaries, measure_renderer_seams
 from .topology_validation import raise_for_validation, validate_multicolor_output
@@ -46,6 +47,7 @@ class MulticolorPipelineConfig:
     primitive_tolerance: float = 0.75
     optimizer_profile_path: Path | None = None
     optimizer_mode: OptimizationMode = OptimizationMode.GEOMETRIC
+    include_inspection_overlay: bool = False
     debug_opt_in: bool = False
 
 
@@ -277,6 +279,11 @@ def run_multicolor_pipeline(
                 },
                 "scene": scene_manifest,
                 "optimizer": optimizer_manifest,
+                **(
+                    {"inspection_overlay": multicolor_scene_overlay(scene, assembly)}
+                    if config.include_inspection_overlay
+                    else {}
+                ),
             },
         )
         preview_path = temporary / "preview.png"

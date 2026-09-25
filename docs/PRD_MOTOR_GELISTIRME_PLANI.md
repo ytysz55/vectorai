@@ -1169,6 +1169,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [x] **ADR-019:** Bounded FIFO queue ve özel idempotency indeksi — `docs/adr/ADR-019-idempotent-local-queue.md`.
 - [x] **ADR-020:** E7 optimized job mode ve lokal UI sınırı — `docs/adr/ADR-020-e7-optimized-job-modes.md`.
 - [x] **ADR-021:** Kaynak koordinatında lokal karşılaştırma ve inline SVG yayın kapısı — `docs/adr/ADR-021-local-comparison-coordinate-contract.md`.
+- [x] **ADR-022:** Job-scoped overlay geometri provenance sınırı — `docs/adr/ADR-022-inspection-overlay-provenance.md`.
 
 Her ADR; bağlam, seçenekler, karar, gerekçe, benchmark kanıtı, sonuçlar ve geri dönüş maliyeti içerir.
 
@@ -1471,7 +1472,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **API-002 — Idempotency ve resource queue** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Aynı anahtar duplicate iş üretmez; limit aşımı typed error. Ham anahtar kaydedilmeden SHA-256/fingerprint özel yan dosyası tekrar başlatmada da eşleşir; farklı talep `409`, dolu FIFO/limitli upload `429`, bozuk indeks keyed admission için `503` üretir. Tek API instance + bir worker/iki bekleyen iş varsayılandır; otomatik retention, multi-process kilidi ve OS RAM sandbox'ı kapsam dışıdır.
 
-**E7 API/UI kanıtı:** Job/queue/cancel/restart/CORS/symlink, dört modun pinned profile routing'i ve kilitli şema fixture testleriyle `250` Python testi; Ruff, mypy, web type-check/build ve sekiz web durum/artefact/koordinat birim testi geçti. API-001/002 ve UI-001 tamamlandı. Tarayıcı E2E ve paketlenmiş wheel JSON resource doğrulaması henüz yapılmadı; native CTest bu ortamda bulunmadığı için E7 değişiklikleri için tekrar çalıştırılamadı.
+**E7 API/UI kanıtı:** Job/queue/cancel/restart/CORS/symlink, dört modun pinned profile routing'i ve kilitli şema fixture testleriyle `252` Python testi; Ruff, mypy, web type-check/build ve on bir web durum/artefact/koordinat/overlay birim testi geçti. API-001/002 ve UI-001 tamamlandı. Tarayıcı E2E ve paketlenmiş wheel JSON resource doğrulaması henüz yapılmadı; native CTest bu ortamda bulunmadığı için E7 değişiklikleri için tekrar çalıştırılamadı.
 
 - [x] **UI-001 — Upload, mode ve job status** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Dört mode gerçek pipeline'a bağlandı: faithful/minimal farklı kilitli optimizer profilleri, geometric hızlı temel akış, stroke line-art. UI `/v1/jobs` üzerinden upload/poll/cancel, typed error ve bütün final statüleri gösterir; yalnız doğrulanmış success/degraded/needs_review dosyaları yayınlanır. Üçüncü taraf font çağrısı kaldırıldı; kayıp upload yanıtında aynı istek anahtarı yeniden kullanılır.
@@ -1479,8 +1480,8 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **UI-002 — Before/after ve baseline karşılaştırması** — P1, 2 gün, bağımlılık: UI-001
   - **Kabul:** Tek kaynak-piksel koordinatında raster, yayınlanmış **gerçek SVG** ve kullanıcı tarafından seçilen eş boyutlu yerel PNG/JPEG baseline pan/zoom paylaşır. Cursor-anchor zoom, aspect letterboxing ve sınır clamp testlidir; uyuşmayan baseline/SVG boyutu zorla ölçeklenmeyip reddedilir. Baseline görsel referanstır, otomatik Potrace/VTracer veya benchmark kanıtı değildir. Inline SVG yalnız yayımlanmış E7 job için sandbox/CSP ve symlink kontrolüyle servis edilir; tarayıcı E2E henüz yapılmadı.
 
-- [ ] **UI-003 — Node, region ve shared-edge overlay** — P1, 2 gün, bağımlılık: UI-002
-  - **Kabul:** Stabil entity ID üzerinden seçim çalışır.
+- [x] **UI-003 — Node, region ve shared-edge overlay** — P1, 2 gün, bağımlılık: UI-002
+  - **Kabul:** E7 multicolor job'larının seçili sahne düğümü, yüz konturu ve iki yüze ait canonical **ham graf kenarı** source-pixel uzayında açılıp seçilir; job içinde stabil face/node/edge ID bütün panellerde ortaktır. Seam-cover stroke sınır değildir; prefit/optimize edilmiş SVG yolu ile graf kenarı aynı geometri olarak sunulmaz. 2000 node/4000 internal edge bütçesi aşılırsa overlay bütünüyle gerekçeli kapatılır. Varsayılan benchmark/artifact E6 sahnesi değişmez; stroke overlay ve gerçek tarayıcı E2E sonraya kalır.
 
 - [ ] **UI-004 — Residual ve confidence açıklaması** — P1, 2 gün, bağımlılık: UI-003
   - **Kabul:** Kullanıcı düşük güvenin hangi stage’den geldiğini görür.

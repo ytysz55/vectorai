@@ -80,6 +80,7 @@ def test_multicolor_pipeline_writes_atomic_scene_bundle(tmp_path: Path) -> None:
     assert scene["palette"]["selected_color_count"] == 3
     assert scene["segmentation"]["region_count"] == 3
     assert scene["graph"]["face_count"] == 3
+    assert "inspection_overlay" not in scene  # E6/benchmark default stays byte-compatible.
     assert len(scene["shared_boundaries"]["seam_pairs"]) == 2
     assert manifest["final_status"] == "success"
     schema = json.loads((ROOT / "schemas/run-manifest.schema.json").read_text(encoding="utf-8"))

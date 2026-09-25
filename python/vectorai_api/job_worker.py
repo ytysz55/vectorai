@@ -78,6 +78,7 @@ def run_worker(job_directory: Path) -> int:
                     resvg_command_prefix=command,
                     optimizer_profile_path=profile_path if mode != "geometric" else None,
                     optimizer_mode=OptimizationMode(mode),
+                    include_inspection_overlay=True,
                 ),
             )
             scene = json.loads(multicolor_bundle.scene_path.read_text(encoding="utf-8"))
