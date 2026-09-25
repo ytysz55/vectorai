@@ -19,6 +19,7 @@ Statuses: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
 - [`ADR-006-optimizer-evaluator-renderer-separation.md`](ADR-006-optimizer-evaluator-renderer-separation.md)
 - [`ADR-008-determinism-contract.md`](ADR-008-determinism-contract.md)
 - [`ADR-009-pdf-export-scope.md`](ADR-009-pdf-export-scope.md)
+- [`ADR-010-confidence-evidence-and-ui.md`](ADR-010-confidence-evidence-and-ui.md)
 - [`ADR-011-coordinate-epsilon-serialization.md`](ADR-011-coordinate-epsilon-serialization.md)
 - [`ADR-012-fill-stroke-arbitration.md`](ADR-012-fill-stroke-arbitration.md)
 - [`ADR-013-cut-ready-physical-validation.md`](ADR-013-cut-ready-physical-validation.md)

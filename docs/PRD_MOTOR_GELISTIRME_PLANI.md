@@ -1157,7 +1157,7 @@ Bu bölüm hukuki tavsiye değildir.
 - [ ] **ADR-007:** DP/beam/MILP model selection yaklaşımı ve FTO etkisi.
 - [x] **ADR-008:** Platform içi/platformlar arası determinism — `docs/adr/ADR-008-determinism-contract.md`.
 - [x] **ADR-009:** PDF backend ve fiziksel ölçü — `docs/adr/ADR-009-pdf-export-scope.md` (E6 SVG-only kararı).
-- [ ] **ADR-010:** Confidence kalibrasyonu ve UI sunumu.
+- [x] **ADR-010:** Kalibrasyonsuz stage evidence ve UI sunum sınırı — `docs/adr/ADR-010-confidence-evidence-and-ui.md`. Pilot reliability diagram/ECE kalibrasyonu hâlâ E8 kapsamındadır.
 - [x] **ADR-011:** Koordinat normalizasyonu, epsilon ve SVG quantization — `docs/adr/ADR-011-coordinate-epsilon-serialization.md`.
 - [x] **ADR-012:** Fill/stroke arbitration — `docs/adr/ADR-012-fill-stroke-arbitration.md`.
 - [x] **ADR-013:** Cut-ready minimum geometri toleransları — `docs/adr/ADR-013-cut-ready-physical-validation.md`.
@@ -1472,7 +1472,7 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **API-002 — Idempotency ve resource queue** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Aynı anahtar duplicate iş üretmez; limit aşımı typed error. Ham anahtar kaydedilmeden SHA-256/fingerprint özel yan dosyası tekrar başlatmada da eşleşir; farklı talep `409`, dolu FIFO/limitli upload `429`, bozuk indeks keyed admission için `503` üretir. Tek API instance + bir worker/iki bekleyen iş varsayılandır; otomatik retention, multi-process kilidi ve OS RAM sandbox'ı kapsam dışıdır.
 
-**E7 API/UI kanıtı:** Job/queue/cancel/restart/CORS/symlink, dört modun pinned profile routing'i ve kilitli şema fixture testleriyle `252` Python testi; Ruff, mypy, web type-check/build ve on bir web durum/artefact/koordinat/overlay birim testi geçti. API-001/002 ve UI-001 tamamlandı. Tarayıcı E2E ve paketlenmiş wheel JSON resource doğrulaması henüz yapılmadı; native CTest bu ortamda bulunmadığı için E7 değişiklikleri için tekrar çalıştırılamadı.
+**E7 API/UI kanıtı:** Job/queue/cancel/restart/CORS/symlink, dört modun pinned profile routing'i ve kilitli şema fixture testleriyle `252` Python testi; Ruff, mypy, web type-check/build ve 15 web durum/artefact/koordinat/overlay/stage-evidence birim testi geçti. API-001/002 ve UI-001–004 tamamlandı. Tarayıcı E2E ve paketlenmiş wheel JSON resource doğrulaması henüz yapılmadı; native CTest bu ortamda bulunmadığı için E7 değişiklikleri için tekrar çalıştırılamadı.
 
 - [x] **UI-001 — Upload, mode ve job status** — P1, 2 gün, bağımlılık: API-001
   - **Kabul:** Dört mode gerçek pipeline'a bağlandı: faithful/minimal farklı kilitli optimizer profilleri, geometric hızlı temel akış, stroke line-art. UI `/v1/jobs` üzerinden upload/poll/cancel, typed error ve bütün final statüleri gösterir; yalnız doğrulanmış success/degraded/needs_review dosyaları yayınlanır. Üçüncü taraf font çağrısı kaldırıldı; kayıp upload yanıtında aynı istek anahtarı yeniden kullanılır.
@@ -1483,8 +1483,8 @@ Süreler tek deneyimli geliştirici için çalışma günü tahminidir. Task tam
 - [x] **UI-003 — Node, region ve shared-edge overlay** — P1, 2 gün, bağımlılık: UI-002
   - **Kabul:** E7 multicolor job'larının seçili sahne düğümü, yüz konturu ve iki yüze ait canonical **ham graf kenarı** source-pixel uzayında açılıp seçilir; job içinde stabil face/node/edge ID bütün panellerde ortaktır. Seam-cover stroke sınır değildir; prefit/optimize edilmiş SVG yolu ile graf kenarı aynı geometri olarak sunulmaz. 2000 node/4000 internal edge bütçesi aşılırsa overlay bütünüyle gerekçeli kapatılır. Varsayılan benchmark/artifact E6 sahnesi değişmez; stroke overlay ve gerçek tarayıcı E2E sonraya kalır.
 
-- [ ] **UI-004 — Residual ve confidence açıklaması** — P1, 2 gün, bağımlılık: UI-003
-  - **Kabul:** Kullanıcı düşük güvenin hangi stage’den geldiğini görür.
+- [x] **UI-004 — Residual ve confidence açıklaması** — P1, 2 gün, bağımlılık: UI-003
+  - **Kabul:** Yayınlanmış yerel scene/manifest/validation artefact’leri 8 MiB/artefact sınırıyla okunur. Junction review, stroke routing/arbitration belirsizliği, optimizer fallback, renderer seam gözlemi veya soft validation fail kaynakları stage bazında ayrılır; ölçülen SSE/RMSE ile kalibre edilmemiş sezgisel margin birbirine karıştırılmaz. Kayıt yoksa düşük/yüksek güven uydurulmaz; kalibre edilmiş olasılık, residual heatmap ve per-entity confidence iddia edilmez. Web saf fonksiyon testleri ve build geçmiştir; gerçek tarayıcı E2E E7 dağıtım doğrulamasına açıktır.
 
 - [ ] **UI-005 — Lokal reprocess invalidation** — P1, 3 gün, bağımlılık: UI-004, ADR-015
   - **Kabul:** Etkilenen subgraph yenilenir ve tüm global validation tekrar çalışır.

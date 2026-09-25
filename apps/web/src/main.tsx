@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ComparisonPanel } from "./ComparisonPanel";
+import { EvidencePanel } from "./EvidencePanel";
 import { MODE_OPTIONS, errorDetail, isJobStatus, isMode, isPublished, isTerminal } from "./jobApi";
 import type { JobStatus, Mode } from "./jobApi";
 import "./styles.css";
@@ -186,6 +187,7 @@ function App() {
           )}
         </section>
       )}
+      {published && job && <EvidencePanel key={job.job_id} job={job} apiOrigin={API_ORIGIN} />}
       <footer>Offline by design · deterministic artifacts · no remote inference</footer>
     </main>
   );

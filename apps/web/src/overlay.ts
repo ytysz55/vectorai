@@ -93,8 +93,8 @@ export function parseInspectionOverlay(value: unknown, size: ImageSize): Inspect
   return { schema_version: "1.0.0", available: true, reason: null, faces, nodes, shared_edges };
 }
 
-export async function readLocalOverlay(response: Response, size: ImageSize): Promise<InspectionOverlay> {
-  if (!response.ok) throw new Error("Local scene metadata is unavailable.");
+export async function readBoundedJson(response: Response): Promise<unknown> {
+  if (!response.ok) throw new Error("Local evidence artifact is unavailable.");
   const claimed = response.headers.get("content-length");
   if (claimed && Number(claimed) > MAX_OVERLAY_BYTES) throw new Error("Local scene metadata exceeds the inspection budget.");
   if (!response.body) throw new Error("Local scene response has no body.");
@@ -118,14 +118,18 @@ export async function readLocalOverlay(response: Response, size: ImageSize): Pro
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   try {
     const parsed: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    const scene = record(parsed);
-    const overlay = parseInspectionOverlay(scene?.inspection_overlay, size);
-    if (!overlay) throw new Error("Local inspection geometry failed validation.");
-    return overlay;
+    return parsed;
   } catch (error) {
     if (error instanceof SyntaxError || error instanceof TypeError) {
       throw new Error("Local scene metadata could not be decoded.", { cause: error });
     }
     throw error;
   }
+}
+
+export async function readLocalOverlay(response: Response, size: ImageSize): Promise<InspectionOverlay> {
+  const scene = record(await readBoundedJson(response));
+  const overlay = parseInspectionOverlay(scene?.inspection_overlay, size);
+  if (!overlay) throw new Error("Local inspection geometry failed validation.");
+  return overlay;
 }
