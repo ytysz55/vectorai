@@ -14,7 +14,7 @@ dependencies = [
   "fastapi>=0.115,<1",
   "jsonschema>=4.23,<5",
   "numpy>=2.1,<3",
-  "pillow>=11,<13",
+  "pillow>=11,<14",
   "psutil>=6,<8",
   "uvicorn>=0.34,<1",
 ]
